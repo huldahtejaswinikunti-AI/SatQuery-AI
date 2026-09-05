@@ -1,0 +1,10 @@
+{
+  "model": "SatQuery-GeoChat-7B (LoRA RSVQAxBEN)",
+  "accuracy": 0.768,
+  "caption_bleu1": 0.592,
+  "hallucination_rate": 0.072,
+  "delta": {
+    "accuracy_gain": "+12.6%",
+    "hallucination_drop": "-61.1%"
+  }
+}

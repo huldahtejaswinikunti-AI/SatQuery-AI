@@ -1,0 +1,6 @@
+{
+  "model": "MBZUAI/geochat-7B (Base Zero-Shot)",
+  "accuracy": 0.642,
+  "caption_bleu1": 0.485,
+  "hallucination_rate": 0.185
+}

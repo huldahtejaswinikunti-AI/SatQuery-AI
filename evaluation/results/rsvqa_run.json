@@ -1,0 +1,5 @@
+{
+  "split": "held_out",
+  "f1": 0.1739130434782609,
+  "prediction": "The scene features vegetation (0.0%), built-up (100.0%), and water (100.0%).\n\n*Evidence Grounding:* Open-ended query without single-index counter-signal."
+}

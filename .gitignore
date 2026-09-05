@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+.env
+.env.local
+
+# Models & Data
+models/**/*.pt
+models/**/*.pth
+models/**/*.bin
+models/**/*.safetensors
+!models/**/.gitkeep
+data/raw/
+data/processed/
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# IDE & Cache
+.vscode/
+.idea/
+*.swp
+.pytest_cache/
+.coverage

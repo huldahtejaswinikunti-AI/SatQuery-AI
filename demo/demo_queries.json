@@ -1,0 +1,33 @@
+[
+  {
+    "task": "single_caption",
+    "query": "Describe the land-cover and major objects visible in this image.",
+    "input_mode": "single_optical",
+    "expected_badge": "High Confidence (Cross-Verified)"
+  },
+  {
+    "task": "grounding",
+    "query": "Highlight the water body referred to in the scene.",
+    "input_mode": "single_optical",
+    "expected_badge": "High Confidence (Cross-Verified)"
+  },
+  {
+    "task": "change_vqa",
+    "query": "What changed between these two dates, and has built-up area increased?",
+    "input_mode": "bitemporal_pair",
+    "expected_badge": "Deterministic Signal"
+  },
+  {
+    "task": "optical_sar_fusion",
+    "query": "Use optical and SAR together to identify built-up structures hidden under cloud.",
+    "input_mode": "optical_sar_pair",
+    "expected_badge": "High Confidence (Cross-Verified)"
+  },
+  {
+    "task": "cross_verification_probe",
+    "query": "Is this entire area covered in deep open water?",
+    "input_mode": "single_optical",
+    "expected_badge": "Lower Confidence (Signal Disagreement)"
+  }
+]
+

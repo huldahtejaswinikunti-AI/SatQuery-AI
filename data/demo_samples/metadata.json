@@ -1,0 +1,31 @@
+{
+  "dataset": "SatQuery Demo Samples",
+  "samples": [
+    {
+      "id": "s1",
+      "type": "single_optical",
+      "file": "sample_coastal_port.png"
+    },
+    {
+      "id": "s2",
+      "type": "single_sar",
+      "file": "sample_sar_estuary.png"
+    },
+    {
+      "id": "s3",
+      "type": "optical_sar_pair",
+      "files": [
+        "optical_cloudy_s2.png",
+        "sar_penetrating_s1.png"
+      ]
+    },
+    {
+      "id": "s4",
+      "type": "bitemporal_pair",
+      "files": [
+        "levir_sample_t1_before.png",
+        "levir_sample_t2_after.png"
+      ]
+    }
+  ]
+}
