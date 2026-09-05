@@ -44,30 +44,82 @@ with st.sidebar:
 def generate_demo(opt: str):
     h, w = 256, 256
     y, x = np.ogrid[:h, :w]
+
     if "Demo 1" in opt:
+        # Synthetic Sentinel-2-like 4-band image:
+        # channels 0-2 = visible bands, channel 3 = NIR
         img = np.full((h, w, 4), 0.2, dtype=np.float32)
-        img[y < 130, 3] = 0.8  # NIR vegetation
-        img[y >= 130, 1] = 0.7 # Water green
-        return [img], [{"filename": "demo_s2.tif", "format": "GeoTIFF"}], "What is the primary land-cover type and is surface water present?"
+
+        # Upper region = vegetation with high NIR
+        img[:130, :, 3] = 0.8
+
+        # Lower region = water
+        img[130:, :, 1] = 0.7
+
+        return (
+            [img],
+            [{"filename": "demo_s2.tif", "format": "GeoTIFF"}],
+            "What is the primary land-cover type and is surface water present?"
+        )
+
     elif "Demo 2" in opt:
         img = np.full((h, w, 3), 120, dtype=np.uint8)
-        circle = (x-128)**2 + (y-128)**2 < 50**2
+
+        circle = (x - 128) ** 2 + (y - 128) ** 2 < 50 ** 2
         img[circle] = [20, 80, 200]
-        return [img], [{"filename": "demo_grounding.png", "format": "PNG"}], "Highlight the water body referred to in the scene."
+
+        return (
+            [img],
+            [{"filename": "demo_grounding.png", "format": "PNG"}],
+            "Highlight the water body referred to in the scene."
+        )
+
     elif "Demo 3" in opt:
         t1 = np.full((h, w, 3), [40, 150, 40], dtype=np.uint8)
+
         t2 = t1.copy()
         t2[100:200, 100:200] = [210, 205, 200]
-        return [t1, t2], [{"filename": "t1_before.png", "format": "PNG"}, {"filename": "t2_after.png", "format": "PNG"}], "What changed between these two dates and has built-up area increased?"
+
+        return (
+            [t1, t2],
+            [
+                {"filename": "t1_before.png", "format": "PNG"},
+                {"filename": "t2_after.png", "format": "PNG"}
+            ],
+            "What changed between these two dates and has built-up area increased?"
+        )
+
     elif "Demo 4" in opt:
+        # Optical image with 4 bands
         opt_arr = np.full((h, w, 4), 0.25, dtype=np.float32)
-        opt_arr[y < 130] = 0.92 # Cloud
+
+        # Upper region = cloud
+        opt_arr[:130, :, :] = 0.92
+
+        # SAR image with 2 channels
         sar_arr = np.full((h, w, 2), -20.0, dtype=np.float32)
-        sar_arr[(y < 100) & (x < 120)] = -4.0 # Urban under cloud
-        return [opt_arr, sar_arr], [{"filename": "opt_cloudy.tif", "format": "TIFF"}, {"filename": "sar_grd.tif", "format": "TIFF"}], "Use optical and SAR together to identify built-up structures hidden under cloud."
+
+        # Urban structures beneath cloud
+        urban_mask = (y < 100) & (x < 120)
+        sar_arr[urban_mask] = -4.0
+
+        return (
+            [opt_arr, sar_arr],
+            [
+                {"filename": "opt_cloudy.tif", "format": "TIFF"},
+                {"filename": "sar_grd.tif", "format": "TIFF"}
+            ],
+            "Use optical and SAR together to identify built-up structures hidden under cloud."
+        )
+
     else:
         img = np.full((h, w, 3), 180, dtype=np.uint8)
-        return [img], [{"filename": "probe.png", "format": "PNG"}], "Is this entire area covered in deep open water?"
+
+        return (
+            [img],
+            [{"filename": "probe.png", "format": "PNG"}],
+            "Is this entire area covered in deep open water?"
+        )
 
 if demo_option != "Custom Upload":
     imgs, metas, default_q = generate_demo(demo_option)
