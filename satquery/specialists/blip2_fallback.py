@@ -1,21 +1,21 @@
 """
-BLIP-2 fallback specialist — same interface as :mod:`geochat_vqa`.
+BLIP-2 fallback VQA / captioning path.
 
-This module is a drop-in replacement for GeoChat-7B when the latency
-benchmark determines that GeoChat exceeds the 3-second-per-query threshold.
-The teammate who owns BLIP-2 integration will complete the model-loading
-logic; the interface contract and return shapes are locked here.
+Model: Salesforce/blip2-opt-2.7b (Hugging Face, free)
+Lighter/faster fallback if GeoChat-7B proves too slow on free-tier GPU.
 
-Public API (mirrors ``geochat_vqa.py`` exactly)
-------------------------------------------------
-- :func:`load_model`
-- :func:`run_vqa`
-- :func:`run_caption`
+IMPORTANT: This module exposes exactly the same three function signatures
+as the geochat_vqa module should expose:
+    load_model(device="cpu")
+    run_vqa(image, question: str) -> dict
+    run_caption(image) -> dict
+
+The executor can swap between GeoChat and BLIP-2 without any other code
+changing — just change the import path.
 """
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
@@ -24,142 +24,224 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constants
+# Singleton model cache
 # ---------------------------------------------------------------------------
-_MODEL_ID = "Salesforce/blip2-opt-2.7b"
-
-# Module-level singletons (lazy-loaded)
 _model = None
 _processor = None
-_device: Optional[str] = None
+_device = "cpu"
 
 
-# ---------------------------------------------------------------------------
-# Model loading
-# ---------------------------------------------------------------------------
-def load_model(
-    model_id: str = _MODEL_ID,
-    device: Optional[str] = None,
-) -> None:
-    """Load BLIP-2 OPT-2.7B for VQA / captioning.
+def load_model(device: str = "cpu") -> None:
+    """
+    Load BLIP-2 OPT-2.7B model and processor, cache globally.
 
     Parameters
     ----------
-    model_id : str
-        Hugging Face Hub model ID.
-    device : str | None
-        Target device (auto-detected when *None*).
-
-    .. note::
-
-        TODO: Teammate completes BLIP-2 loading.  Current implementation
-        uses a lightweight mock so the rest of the pipeline stays runnable
-        without pulling the full BLIP-2 weights.
+    device : str
+        Device to load the model on. Default "cpu".
+        Use "cuda" if a GPU is available for faster inference.
     """
     global _model, _processor, _device
+
+    if _model is not None:
+        return
+
     import torch
+    from transformers import Blip2ForConditionalGeneration, Blip2Processor
 
-    _device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    _device = device
+    model_id = "Salesforce/blip2-opt-2.7b"
 
-    # TODO(teammate): Replace mock with real BLIP-2 loading:
-    #
-    #   from transformers import Blip2Processor, Blip2ForConditionalGeneration
-    #   _processor = Blip2Processor.from_pretrained(model_id)
-    #   _model = Blip2ForConditionalGeneration.from_pretrained(
-    #       model_id, torch_dtype=torch.float16, device_map="auto",
-    #   )
-    #   _model.eval()
-    #
-    # For now, set a sentinel so _ensure_loaded() doesn't re-enter.
-    _model = "mock"
-    _processor = "mock"
-    logger.warning(
-        "[blip2_fallback] Using MOCK implementation — teammate: "
-        "replace with real Blip2ForConditionalGeneration loading."
+    logger.info(f"Loading BLIP-2 OPT-2.7B ({model_id}) on {device} ...")
+
+    _processor = Blip2Processor.from_pretrained(model_id)
+
+    # Use float16 for memory efficiency (~6 GB instead of ~12 GB)
+    dtype = torch.float16 if device != "cpu" else torch.float32
+    _model = Blip2ForConditionalGeneration.from_pretrained(
+        model_id,
+        torch_dtype=dtype,
     )
+    _model.to(device)
+    _model.eval()
+
+    logger.info(f"BLIP-2 loaded successfully on {device} (dtype={dtype}).")
 
 
-def _ensure_loaded() -> None:
-    if _model is None:
-        load_model()
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _to_pil(image: Union[Image.Image, np.ndarray]) -> Image.Image:
-    """Normalise input to PIL RGB."""
+def _to_pil(image: Union[np.ndarray, Image.Image]) -> Image.Image:
+    """Convert input to RGB PIL Image."""
     if isinstance(image, Image.Image):
         return image.convert("RGB")
-    if isinstance(image, np.ndarray):
-        if image.ndim == 2:
-            image = np.stack([image] * 3, axis=-1)
-        if image.shape[-1] > 3:
-            image = image[..., :3]
-        if image.dtype != np.uint8:
-            image = (np.clip(image, 0, 1) * 255).astype(np.uint8)
-        return Image.fromarray(image).convert("RGB")
-    raise TypeError(f"Unsupported image type: {type(image)}")
+    arr = image
+    if arr.ndim == 2:
+        arr = np.stack([arr, arr, arr], axis=-1)
+    if arr.shape[-1] == 1:
+        arr = np.concatenate([arr, arr, arr], axis=-1)
+    if arr.dtype != np.uint8:
+        # Percentile stretch
+        out = np.zeros_like(arr, dtype=np.float32)
+        for c in range(min(arr.shape[-1], 3)):
+            ch = arr[..., c].astype(np.float32)
+            valid = ch[np.isfinite(ch)]
+            if len(valid) == 0:
+                continue
+            p2, p98 = np.percentile(valid, [2, 98])
+            if p98 <= p2:
+                p98 = p2 + 1e-6
+            out[..., c] = np.clip((ch - p2) / (p98 - p2) * 255, 0, 255)
+        arr = out[..., :3].astype(np.uint8)
+    else:
+        arr = arr[..., :3]
+    return Image.fromarray(arr, "RGB")
 
 
-# ---------------------------------------------------------------------------
-# Public API — identical signatures and return shapes to geochat_vqa.py
-# ---------------------------------------------------------------------------
-def run_vqa(image: Union[Image.Image, np.ndarray], question: str) -> dict:
-    """Answer a visual question about a remote-sensing image.
+def run_vqa(
+    image: Union[np.ndarray, Image.Image],
+    question: str,
+) -> dict:
+    """
+    Visual Question Answering using BLIP-2.
+
+    Parameters
+    ----------
+    image : np.ndarray or PIL.Image
+        Input image (RGB).
+    question : str
+        Natural-language question about the image.
 
     Returns
     -------
-    dict
-        ``{"answer": str, "raw_confidence": float, "evidence": None}``
+    dict with keys:
+        "answer"         : str   — human-readable answer
+        "raw_confidence" : float — proxy confidence (sequence probability)
+        "model"          : str   — model identifier
     """
-    _ensure_loaded()
-    pil = _to_pil(image)
+    import torch
 
-    # TODO(teammate): Replace with real BLIP-2 inference.
-    # Inputs:  _processor(images=pil, text=question, return_tensors="pt")
-    # Outputs: _model.generate(**inputs, max_new_tokens=64)
-    answer = f"[BLIP-2 MOCK] Unable to answer: '{question}' — model not loaded."
-    return {"answer": answer, "raw_confidence": 0.0, "evidence": None}
+    load_model(_device)
+
+    pil_img = _to_pil(image)
+
+    inputs = _processor(
+        images=pil_img,
+        text=question,
+        return_tensors="pt",
+    ).to(_device)
+
+    with torch.no_grad():
+        outputs = _model.generate(
+            **inputs,
+            max_new_tokens=128,
+            num_beams=5,
+            early_stopping=True,
+            output_scores=True,
+            return_dict_in_generate=True,
+        )
+
+    generated_text = _processor.decode(
+        outputs.sequences[0], skip_special_tokens=True
+    ).strip()
+
+    # Compute a proxy confidence from the generation scores
+    if hasattr(outputs, "sequences_scores") and outputs.sequences_scores is not None:
+        # Log-probability of the sequence → convert to [0, 1]
+        log_prob = float(outputs.sequences_scores[0])
+        raw_confidence = min(1.0, max(0.0, np.exp(log_prob)))
+    else:
+        raw_confidence = 0.7  # fallback when scores unavailable
+
+    return {
+        "answer": generated_text,
+        "raw_confidence": round(raw_confidence, 4),
+        "model": "Salesforce/blip2-opt-2.7b",
+    }
 
 
-def run_caption(image: Union[Image.Image, np.ndarray]) -> dict:
-    """Generate a caption for a remote-sensing image.
+def run_caption(
+    image: Union[np.ndarray, Image.Image],
+) -> dict:
+    """
+    Image captioning using BLIP-2.
+
+    Parameters
+    ----------
+    image : np.ndarray or PIL.Image
+        Input image (RGB).
 
     Returns
     -------
-    dict
-        ``{"answer": str, "raw_confidence": float, "evidence": None}``
+    dict with keys:
+        "caption"        : str   — generated caption
+        "raw_confidence" : float — proxy confidence
+        "model"          : str   — model identifier
     """
-    _ensure_loaded()
-    pil = _to_pil(image)
+    import torch
 
-    # TODO(teammate): Replace with real BLIP-2 captioning.
-    answer = "[BLIP-2 MOCK] Caption not available — model not loaded."
-    return {"answer": answer, "raw_confidence": 0.0, "evidence": None}
+    load_model(_device)
+
+    pil_img = _to_pil(image)
+
+    inputs = _processor(
+        images=pil_img,
+        return_tensors="pt",
+    ).to(_device)
+
+    with torch.no_grad():
+        outputs = _model.generate(
+            **inputs,
+            max_new_tokens=64,
+            num_beams=5,
+            early_stopping=True,
+            output_scores=True,
+            return_dict_in_generate=True,
+        )
+
+    caption = _processor.decode(
+        outputs.sequences[0], skip_special_tokens=True
+    ).strip()
+
+    if hasattr(outputs, "sequences_scores") and outputs.sequences_scores is not None:
+        log_prob = float(outputs.sequences_scores[0])
+        raw_confidence = min(1.0, max(0.0, np.exp(log_prob)))
+    else:
+        raw_confidence = 0.75
+
+    return {
+        "caption": caption,
+        "raw_confidence": round(raw_confidence, 4),
+        "model": "Salesforce/blip2-opt-2.7b",
+    }
 
 
 # ---------------------------------------------------------------------------
-# Backward-compatible class wrapper
+# Backward-compatible class API (matches existing __init__.py import)
 # ---------------------------------------------------------------------------
 class BLIP2FallbackSpecialist:
-    """Class wrapper for pipeline backward compatibility."""
+    """
+    Class wrapper for backward compatibility with existing pipeline code.
 
-    def __init__(self, model_id: Optional[str] = None) -> None:
-        self.model_id = model_id or _MODEL_ID
+    Wraps the module-level load_model / run_vqa / run_caption functions
+    into the answer_query / generate_caption class API that existing
+    __init__.py and pipeline/executor.py expect.
+    """
+
+    def __init__(self, model_id: Optional[str] = None):
+        self.model_id = model_id or "Salesforce/blip2-opt-2.7b"
 
     def answer_query(self, image_arr: np.ndarray, query: str) -> dict:
+        """VQA — matches GeoChatSpecialist.answer_query() signature."""
         result = run_vqa(image_arr, query)
         return {
             "answer": result["answer"],
             "confidence": result["raw_confidence"],
-            "model": "BLIP-2 Fallback",
+            "model": result["model"],
         }
 
     def generate_caption(self, image_arr: np.ndarray) -> dict:
+        """Captioning — matches GeoChatSpecialist.generate_caption() signature."""
         result = run_caption(image_arr)
         return {
-            "caption": result["answer"],
+            "caption": result["caption"],
             "confidence": result["raw_confidence"],
-            "model": "BLIP-2 Fallback",
+            "model": result["model"],
         }

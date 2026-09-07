@@ -1,0 +1,64 @@
+{
+  "split": "held_out",
+  "timestamp": "2026-09-07T20:08:14.935479",
+  "total_samples": 3,
+  "successful_samples": 3,
+  "error_count": 0,
+  "metrics": {
+    "avg_token_f1": 0.1212,
+    "avg_exact_match": 0.0,
+    "avg_latency_s": 0.002
+  },
+  "per_question_type": {
+    "change_description": {
+      "count": 1,
+      "avg_token_f1": 0.0,
+      "avg_exact_match": 0.0
+    },
+    "yes_no": {
+      "count": 1,
+      "avg_token_f1": 0.0,
+      "avg_exact_match": 0.0
+    },
+    "quantitative": {
+      "count": 1,
+      "avg_token_f1": 0.3636,
+      "avg_exact_match": 0.0
+    }
+  },
+  "individual_results": [
+    {
+      "image_id": "demo_01",
+      "question": "What has changed in this area?",
+      "question_type": "change_description",
+      "ground_truth": "Built-up area has increased.",
+      "prediction": "Significant structural changes detected, concentrated in the southern portion, affecting approximately 6.0% of the scene.",
+      "token_f1": 0.0,
+      "exact_match": 0.0,
+      "latency_s": 0.002,
+      "error": null
+    },
+    {
+      "image_id": "demo_02",
+      "question": "Is there any new construction?",
+      "question_type": "yes_no",
+      "ground_truth": "Yes, new buildings have appeared.",
+      "prediction": "Significant structural changes detected, concentrated in the southern portion, affecting approximately 6.0% of the scene.",
+      "token_f1": 0.0,
+      "exact_match": 0.0,
+      "latency_s": 0.002,
+      "error": null
+    },
+    {
+      "image_id": "demo_03",
+      "question": "What percentage of the area changed?",
+      "question_type": "quantitative",
+      "ground_truth": "Approximately 15% of the area shows changes.",
+      "prediction": "Significant structural changes detected, concentrated in the southern portion, affecting approximately 6.0% of the scene.",
+      "token_f1": 0.3636,
+      "exact_match": 0.0,
+      "latency_s": 0.002,
+      "error": null
+    }
+  ]
+}

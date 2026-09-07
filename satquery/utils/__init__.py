@@ -24,11 +24,13 @@ try:
         create_change_overlay,
         create_mask_overlay,
         create_side_by_side,
+        draw_overlay,
     )
 except ImportError:
     create_change_overlay = None  # type: ignore
     create_mask_overlay = None  # type: ignore
     create_side_by_side = None  # type: ignore
+    draw_overlay = None  # type: ignore
 
 __all__ = [
     "load_image",
@@ -39,6 +41,7 @@ __all__ = [
     "create_mask_overlay",
     "create_change_overlay",
     "create_side_by_side",
+    "draw_overlay",
     "DEVICE",
     "MAX_IMAGE_DIM",
     "NDVI_THRESHOLD",
