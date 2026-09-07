@@ -1,133 +1,224 @@
+"""Pipeline executor — dispatches to specialist modules and orchestrates
+cross-verification and phrasing.
+
+Specialist imports are **stubbed** with clearly-named function calls and
+comments marking which teammate owns each one.  Replace the stub imports
+with real ones once teammates push their modules.
+
+Exception policy: retry once, then fail loudly (``ExecutionError``).
+
+Public API
+----------
+execute(task, validated_input) -> dict
+"""
+
 from __future__ import annotations
-import time, uuid
+
+import logging
+import time
+from datetime import datetime, timezone
 from typing import Any
-import numpy as np
 
-from satquery.validator.input_validator import InputValidator
-from satquery.router.task_router import TaskRouter
+from satquery.pipeline.execution_trace import build_trace
 from satquery.router.task_types import TaskType
-from satquery.perception.spectral_indices import compute_spectral_indices
-from satquery.specialists.geochat_vqa import GeoChatSpecialist
-from satquery.specialists.clipseg_grounding import CLIPSegGroundingSpecialist
-from satquery.specialists.tinycd_change import TinyCDSpecialist
-from satquery.fusion.optical_sar_fusion import OpticalSARFusionEngine
-from satquery.cross_verification.verifier import CrossVerifier
-from satquery.phrasing.phrasing_llm import PhrasingLLM
-from satquery.pipeline.execution_trace import ExecutionTrace, ToolStep
-from satquery.utils.image_utils import to_display_rgb
-from satquery.utils.overlay import create_mask_overlay, create_change_overlay, create_side_by_side
+from satquery.utils.config import SPECIALIST_MAX_RETRIES
+from satquery.validator.schemas import ValidatedInput
 
-class PipelineExecutor:
-    def __init__(self):
-        self.validator = InputValidator()
-        self.router = TaskRouter()
-        self.geochat = GeoChatSpecialist()
-        self.clipseg = CLIPSegGroundingSpecialist()
-        self.tinycd = TinyCDSpecialist()
-        self.fusion = OpticalSARFusionEngine()
-        self.verifier = CrossVerifier()
-        self.phrasing = PhrasingLLM()
+logger = logging.getLogger(__name__)
 
-    def run(self, images: list[np.ndarray], metas: list[dict[str, Any]], query: str) -> dict[str, Any]:
-        start = time.perf_counter()
-        trace_id = str(uuid.uuid4())[:8]
-        steps = []
 
-        # 1. Validation
-        val = self.validator.validate(images, metas, query)
-        steps.append(ToolStep(tool_name="InputValidator", output_summary={"is_valid": val.is_valid}))
-        if not val.is_valid:
-            tr = ExecutionTrace(trace_id=trace_id, task="error", query=query, tools_invoked=["InputValidator"], confidence=0.0, confidence_tag="error", steps=steps)
-            return {"answer": f"Input validation failed: {val.error_message}", "confidence_score": 0.0, "confidence_tag": "error", "overlay": None, "trace": tr.to_dict()}
+class ExecutionError(Exception):
+    """Raised when a specialist fails after exhausting retries."""
 
-        # 2. Routing
-        decision = self.router.route(val, query)
-        steps.append(ToolStep(tool_name="TaskRouter", output_summary={"task": decision.task.value}))
-        task = decision.task
-        primary = images[0]
-
-        facts = {}
-        overlay = None
-        conf_score = 0.90
-        conf_tag = "high_rule_based"
-
-        if task == TaskType.SINGLE_VQA:
-            spec = compute_spectral_indices(primary)
-            steps.append(ToolStep(tool_name="spectral_indices", output_summary={"veg": spec.vegetation_fraction}))
-            vqa_res = self.geochat.answer_query(primary, query)
-            steps.append(ToolStep(tool_name="GeoChatSpecialist"))
-            verif = self.verifier.verify_vqa_claim(vqa_res["answer"], vqa_res["confidence"], spec, query)
-            steps.append(ToolStep(tool_name="CrossVerifier", output_summary={"cross_verified": verif.is_cross_verified}))
-            conf_score = verif.confidence_score
-            conf_tag = verif.confidence_tag
-            facts = {"vqa_answer": vqa_res["answer"], "verification_explanation": verif.explanation}
-            overlay = to_display_rgb(primary)
-
-        elif task == TaskType.SINGLE_CAPTION:
-            spec = compute_spectral_indices(primary)
-            steps.append(ToolStep(tool_name="spectral_indices"))
-            cap_res = self.geochat.generate_caption(primary)
-            steps.append(ToolStep(tool_name="GeoChatSpecialist"))
-            conf_score = cap_res["confidence"]
-            conf_tag = "high_cross_verified"
-            facts = {"caption": cap_res["caption"]}
-            overlay = to_display_rgb(primary)
-
-        elif task == TaskType.GROUNDING:
-            target = decision.target_phrase or "target region"
-            seg = self.clipseg.segment(primary, prompt=target)
-            steps.append(ToolStep(tool_name="CLIPSegSpecialist"))
-            spec = compute_spectral_indices(primary)
-            verif = self.verifier.verify_grounding_mask(seg["binary_mask"], target, spec)
-            steps.append(ToolStep(tool_name="CrossVerifier"))
-            conf_score = verif.confidence_score
-            conf_tag = verif.confidence_tag
-            facts = {"target_prompt": target, "verification_explanation": verif.explanation}
-            base = to_display_rgb(primary)
-            color = (0, 191, 255) if "water" in target else (46, 204, 113) if "veg" in target else (255, 69, 0)
-            overlay = create_mask_overlay(base, seg["probability_mask"], color=color)
-
-        elif task == TaskType.BITEMPORAL_CHANGE:
-            cd = self.tinycd.detect_change(images[0], images[1])
-            steps.append(ToolStep(tool_name="TinyCDSpecialist"))
-            conf_score = cd["confidence"]
-            conf_tag = "high_rule_based"
-            facts = cd
-            rgb1 = to_display_rgb(images[0])
-            rgb2 = to_display_rgb(images[1])
-            over = create_change_overlay(rgb1, rgb2, cd["change_mask"])
-            overlay = create_side_by_side([rgb1, rgb2, over], titles=["Before", "After", "Changes"])
-
-        elif task == TaskType.OPTICAL_SAR_FUSION:
-            opt = images[0] if val.images_metadata[0].modality != "sar" else images[1]
-            sar = images[1] if val.images_metadata[0].modality != "sar" else images[0]
-            fres = self.fusion.fuse(opt, sar)
-            steps.append(ToolStep(tool_name="OpticalSARFusionEngine"))
-            conf_score = fres.confidence
-            conf_tag = fres.confidence_level
-            facts = {
-                "water_fraction": fres.water_fraction, "built_up_fraction": fres.built_up_fraction,
-                "cloud_fraction": fres.cloud_fraction, "stated_reasons": fres.stated_reasons,
-                "modality_weights": fres.modality_weights
-            }
-            opt_rgb = to_display_rgb(opt)
-            sar_rgb = to_display_rgb(sar)
-            fused_disp = opt_rgb.copy()
-            fused_disp[fres.fused_water_mask] = [0, 150, 255]
-            fused_disp[fres.fused_built_up_mask] = [255, 60, 60]
-            overlay = create_side_by_side([opt_rgb, sar_rgb, fused_disp], titles=["Optical (S2)", "SAR (S1)", "Fused Analysis"])
-
-        ans = self.phrasing.phrase_response(task.value, query, facts, conf_tag, conf_score)
-        steps.append(ToolStep(tool_name="PhrasingLLM"))
-
-        tr = ExecutionTrace(
-            trace_id=trace_id, task=task.value, query=query,
-            tools_invoked=[s.tool_name for s in steps],
-            parameters={"config": val.detected_configuration, "num_images": len(images)},
-            confidence=round(conf_score, 3), confidence_tag=conf_tag, steps=steps,
-            metadata={"duration_ms": round((time.perf_counter() - start)*1000, 2)}
+    def __init__(self, task: TaskType, specialist: str, original: Exception):
+        self.task = task
+        self.specialist = specialist
+        self.original = original
+        super().__init__(
+            f"Specialist '{specialist}' failed for task '{task.value}' "
+            f"after {SPECIALIST_MAX_RETRIES + 1} attempt(s): {original}"
         )
-        return {
-            "answer": ans, "confidence_score": round(conf_score, 3), "confidence_tag": conf_tag,
-            "overlay": overlay, "trace": tr.to_dict(), "structured_facts": facts, "query": query
-        }
+
+
+# ---------------------------------------------------------------------------
+# Specialist dispatch table
+# ---------------------------------------------------------------------------
+# Each entry maps TaskType -> (module_function, display_name, teammate)
+# Replace stubs with real imports once teammates push their code.
+# ---------------------------------------------------------------------------
+
+def _stub_specialist(name: str):
+    """Create a stub callable that raises NotImplementedError."""
+    def _fn(validated_input: ValidatedInput) -> dict[str, Any]:
+        raise NotImplementedError(
+            f"Specialist '{name}' is not yet implemented. "
+            "Replace this stub with the real import."
+        )
+    _fn.__qualname__ = name
+    return _fn
+
+
+# --- Teammate A: VQA specialist ---
+try:
+    from satquery.specialists.vqa import run_vqa  # type: ignore[import]
+except ImportError:
+    run_vqa = _stub_specialist("satquery.specialists.vqa.run_vqa")
+
+# --- Teammate B: Captioning specialist ---
+try:
+    from satquery.specialists.captioning import run_caption  # type: ignore[import]
+except ImportError:
+    run_caption = _stub_specialist("satquery.specialists.captioning.run_caption")
+
+# --- Teammate C: Grounding specialist ---
+try:
+    from satquery.specialists.grounding import run_grounding  # type: ignore[import]
+except ImportError:
+    run_grounding = _stub_specialist("satquery.specialists.grounding.run_grounding")
+
+# --- Teammate D: Change detection specialist ---
+try:
+    from satquery.specialists.change_detection import run_change_vqa  # type: ignore[import]
+except ImportError:
+    run_change_vqa = _stub_specialist(
+        "satquery.specialists.change_detection.run_change_vqa"
+    )
+
+# --- Teammate E: Fusion specialist ---
+try:
+    from satquery.specialists.fusion import run_fusion  # type: ignore[import]
+except ImportError:
+    run_fusion = _stub_specialist("satquery.specialists.fusion.run_fusion")
+
+# --- Teammate F: Cross-verification ---
+try:
+    from satquery.cross_verification.verifier import verify  # type: ignore[import]
+except ImportError:
+    verify = _stub_specialist("satquery.cross_verification.verifier.verify")
+
+
+_TASK_DISPATCH: dict[TaskType, tuple[Any, str]] = {
+    TaskType.SINGLE_VQA: (run_vqa, "vqa"),
+    TaskType.SINGLE_CAPTION: (run_caption, "captioning"),
+    TaskType.GROUNDING: (run_grounding, "grounding"),
+    TaskType.CHANGE_VQA: (run_change_vqa, "change_detection"),
+    TaskType.OPTICAL_SAR_FUSION: (run_fusion, "fusion"),
+}
+
+
+# ---------------------------------------------------------------------------
+# Phrasing
+# ---------------------------------------------------------------------------
+
+try:
+    from satquery.phrasing.phrasing_llm import phrase  # type: ignore[import]
+except ImportError:
+    phrase = _stub_specialist("satquery.phrasing.phrasing_llm.phrase")
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+def execute(
+    task: TaskType,
+    validated_input: ValidatedInput,
+    router_confidence: float = 1.0,
+) -> dict[str, Any]:
+    """Run the full pipeline for a given task and validated input.
+
+    Parameters
+    ----------
+    task : TaskType
+        The routed task type.
+    validated_input : ValidatedInput
+        The validated input from the validator layer.
+    router_confidence : float
+        Confidence returned by the router (included in the trace).
+
+    Returns
+    -------
+    dict
+        Keys: ``trace``, ``answer``, ``verified_facts``.
+
+    Raises
+    ------
+    ExecutionError
+        If the specialist fails after retrying.
+    """
+    tools_invoked: list[str] = []
+    parameters: dict[str, Any] = {
+        "image_count": len(validated_input.images),
+        "input_type": validated_input.input_type.value,
+        "query": validated_input.query,
+    }
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    # --- Step 1: Call specialist ---
+    specialist_fn, specialist_name = _TASK_DISPATCH[task]
+    tools_invoked.append(specialist_name)
+
+    facts = _call_with_retry(
+        specialist_fn, validated_input, task, specialist_name,
+    )
+
+    # --- Step 2: Cross-verification ---
+    tools_invoked.append("cross_verification")
+    verified_facts = _call_with_retry(
+        lambda inp: verify(facts),  # verify takes facts, not input
+        validated_input,
+        task,
+        "cross_verification",
+    )
+
+    # --- Step 3: Phrasing ---
+    tools_invoked.append("phrasing_llm")
+    answer = _call_with_retry(
+        lambda inp: phrase(verified_facts),
+        validated_input,
+        task,
+        "phrasing_llm",
+    )
+
+    # --- Step 4: Build trace ---
+    trace = build_trace(
+        task=task.value,
+        tools_invoked=tools_invoked,
+        parameters=parameters,
+        confidence=str(router_confidence),
+        timestamp=timestamp,
+    )
+
+    return {
+        "trace": trace,
+        "answer": answer,
+        "verified_facts": verified_facts,
+    }
+
+
+def _call_with_retry(
+    fn,
+    validated_input: ValidatedInput,
+    task: TaskType,
+    name: str,
+) -> Any:
+    """Call *fn* with retry logic per the configured policy."""
+    last_exc: Exception | None = None
+
+    for attempt in range(SPECIALIST_MAX_RETRIES + 1):
+        try:
+            return fn(validated_input)
+        except Exception as exc:
+            last_exc = exc
+            logger.warning(
+                "Specialist '%s' attempt %d/%d failed: %s",
+                name,
+                attempt + 1,
+                SPECIALIST_MAX_RETRIES + 1,
+                exc,
+            )
+            if attempt < SPECIALIST_MAX_RETRIES:
+                time.sleep(0.5)  # brief back-off before retry
+
+    raise ExecutionError(task, name, last_exc)  # type: ignore[arg-type]

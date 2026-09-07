@@ -1,88 +1,183 @@
+"""Pure image-processing helpers used across perception and specialist layers.
+
+All functions are pure (no side effects, no I/O, no model calls).
+They operate on numpy arrays only.
 """
-Image preprocessing and band extraction.
-"""
+
 from __future__ import annotations
+
 import numpy as np
-from PIL import Image
 
-def normalize_percentile(arr: np.ndarray, lower_pct: float = 2.0, upper_pct: float = 98.0) -> np.ndarray:
-    arr = arr.astype(np.float32)
-    valid_mask = np.isfinite(arr)
-    if not np.any(valid_mask):
-        return np.zeros_like(arr, dtype=np.float32)
-    p_low = np.percentile(arr[valid_mask], lower_pct)
-    p_high = np.percentile(arr[valid_mask], upper_pct)
-    if p_high <= p_low:
-        p_high = p_low + 1e-6
-    return np.clip((arr - p_low) / (p_high - p_low), 0.0, 1.0)
 
-def to_display_rgb(arr: np.ndarray) -> np.ndarray:
-    if arr.ndim == 2:
-        norm = normalize_percentile(arr)
-        return (np.stack([norm, norm, norm], axis=-1) * 255).astype(np.uint8)
-    channels = arr.shape[-1]
-    if channels == 1:
-        norm = normalize_percentile(arr[..., 0])
-        return (np.stack([norm, norm, norm], axis=-1) * 255).astype(np.uint8)
-    elif channels == 2:
-        vv = normalize_percentile(arr[..., 0])
-        vh = normalize_percentile(arr[..., 1])
-        ratio = normalize_percentile(arr[..., 0] / (arr[..., 1] + 1e-6))
-        return (np.stack([vv, vh, ratio], axis=-1) * 255).astype(np.uint8)
-    elif channels in (3, 4):
-        if arr.dtype == np.uint8:
-            return arr[..., :3]
-        r = normalize_percentile(arr[..., 0])
-        g = normalize_percentile(arr[..., 1])
-        b = normalize_percentile(arr[..., 2])
-        return (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
-    elif channels >= 10:
-        r = normalize_percentile(arr[..., 3])
-        g = normalize_percentile(arr[..., 2])
-        b = normalize_percentile(arr[..., 1])
-        return (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+def resize(
+    array: np.ndarray,
+    target_h: int,
+    target_w: int,
+    method: str = "bilinear",
+) -> np.ndarray:
+    """Resize a 2-D or 3-D array to ``(target_h, target_w)``.
+
+    Parameters
+    ----------
+    array : np.ndarray
+        Input array of shape ``(H, W)`` or ``(C, H, W)``.
+    target_h, target_w : int
+        Desired spatial dimensions.
+    method : str
+        Interpolation method: ``"nearest"`` or ``"bilinear"`` (default).
+
+    Returns
+    -------
+    np.ndarray
+        Resized array preserving the original number of dimensions.
+    """
+    from PIL import Image
+
+    pil_methods = {
+        "nearest": Image.NEAREST,
+        "bilinear": Image.BILINEAR,
+    }
+    interp = pil_methods.get(method, Image.BILINEAR)
+
+    if array.ndim == 2:
+        img = Image.fromarray(array)
+        resized = img.resize((target_w, target_h), interp)
+        return np.array(resized)
+    elif array.ndim == 3:
+        # (C, H, W) — resize each channel independently
+        channels = []
+        for c in range(array.shape[0]):
+            img = Image.fromarray(array[c])
+            resized = img.resize((target_w, target_h), interp)
+            channels.append(np.array(resized))
+        return np.stack(channels, axis=0)
     else:
-        r = normalize_percentile(arr[..., 0])
-        g = normalize_percentile(arr[..., 1])
-        b = normalize_percentile(arr[..., 2 if channels > 2 else 0])
-        return (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+        raise ValueError(f"Expected 2-D or 3-D array, got shape {array.shape}")
 
-def extract_optical_bands(arr: np.ndarray) -> dict[str, np.ndarray]:
-    bands: dict[str, np.ndarray] = {}
-    if arr.ndim == 2:
-        for b in ["red", "green", "blue", "nir", "swir"]:
-            bands[b] = arr.astype(np.float32)
-        return bands
-    channels = arr.shape[-1]
-    if channels >= 12:
-        bands["blue"] = arr[..., 1].astype(np.float32)
-        bands["green"] = arr[..., 2].astype(np.float32)
-        bands["red"] = arr[..., 3].astype(np.float32)
-        bands["nir"] = arr[..., 7].astype(np.float32)
-        bands["swir"] = arr[..., 10].astype(np.float32)
-    elif channels >= 4:
-        bands["red"] = arr[..., 0].astype(np.float32)
-        bands["green"] = arr[..., 1].astype(np.float32)
-        bands["blue"] = arr[..., 2].astype(np.float32)
-        bands["nir"] = arr[..., 3].astype(np.float32)
-        bands["swir"] = (arr[..., 0] * 0.7 + arr[..., 3] * 0.3).astype(np.float32)
-    else:
-        bands["red"] = arr[..., 0].astype(np.float32)
-        bands["green"] = arr[..., 1].astype(np.float32)
-        bands["blue"] = arr[..., 2].astype(np.float32)
-        bands["nir"] = (arr[..., 1] * 1.4 - arr[..., 0] * 0.4).astype(np.float32)
-        bands["swir"] = (arr[..., 0] * 1.1).astype(np.float32)
-    return bands
 
-def extract_sar_bands(arr: np.ndarray) -> dict[str, np.ndarray]:
-    bands: dict[str, np.ndarray] = {}
-    if arr.ndim == 2:
-        bands["vv"] = arr.astype(np.float32)
-        bands["vh"] = (arr * 0.5).astype(np.float32)
-    elif arr.shape[-1] == 1:
-        bands["vv"] = arr[..., 0].astype(np.float32)
-        bands["vh"] = (arr[..., 0] * 0.5).astype(np.float32)
+def normalize(
+    array: np.ndarray,
+    method: str = "minmax",
+) -> np.ndarray:
+    """Normalize array values.
+
+    Parameters
+    ----------
+    array : np.ndarray
+        Input array (any shape).
+    method : str
+        One of:
+        - ``"minmax"``: scale to [0, 1] range.
+        - ``"standard"``: zero-mean, unit-variance.
+        - ``"sentinel2_reflectance"``: divide by 10 000 (Sentinel-2 L2A convention).
+
+    Returns
+    -------
+    np.ndarray
+        Normalized array as float32.
+    """
+    arr = array.astype(np.float32)
+
+    if method == "minmax":
+        arr_min = arr.min()
+        arr_max = arr.max()
+        if arr_max - arr_min == 0:
+            return np.zeros_like(arr)
+        return (arr - arr_min) / (arr_max - arr_min)
+
+    elif method == "standard":
+        mean = arr.mean()
+        std = arr.std()
+        if std == 0:
+            return np.zeros_like(arr)
+        return (arr - mean) / std
+
+    elif method == "sentinel2_reflectance":
+        return arr / 10_000.0
+
     else:
-        bands["vv"] = arr[..., 0].astype(np.float32)
-        bands["vh"] = arr[..., 1].astype(np.float32)
-    return bands
+        raise ValueError(
+            f"Unknown normalization method '{method}'. "
+            f"Supported: 'minmax', 'standard', 'sentinel2_reflectance'."
+        )
+
+
+def extract_bands(
+    bands_dict: dict[str, np.ndarray],
+    band_names: list[str],
+) -> np.ndarray:
+    """Stack selected bands into a ``(C, H, W)`` array.
+
+    Parameters
+    ----------
+    bands_dict : dict[str, np.ndarray]
+        Mapping of band name → 2-D array, as returned by ``geo_io.load_image``.
+    band_names : list[str]
+        Ordered list of band names to extract, e.g. ``["band_4", "band_3", "band_2"]``.
+
+    Returns
+    -------
+    np.ndarray
+        Stacked array of shape ``(len(band_names), H, W)``.
+
+    Raises
+    ------
+    KeyError
+        If a requested band name is not present in *bands_dict*.
+    """
+    arrays = []
+    for name in band_names:
+        if name not in bands_dict:
+            available = sorted(bands_dict.keys())
+            raise KeyError(
+                f"Band '{name}' not found. Available bands: {available}"
+            )
+        arrays.append(bands_dict[name])
+    return np.stack(arrays, axis=0)
+
+
+def to_rgb_preview(
+    bands_dict: dict[str, np.ndarray],
+    r: str = "band_4",
+    g: str = "band_3",
+    b: str = "band_2",
+) -> np.ndarray:
+    """Create an 8-bit RGB preview image from selected bands.
+
+    Default band mapping is Sentinel-2 true color (B4=Red, B3=Green, B2=Blue).
+    Falls back to ``red/green/blue`` keys if the numbered bands are absent
+    (e.g. when the source is a PNG/JPEG).
+
+    Parameters
+    ----------
+    bands_dict : dict[str, np.ndarray]
+        Band name → 2-D array mapping.
+    r, g, b : str
+        Keys for the red, green, and blue channels.
+
+    Returns
+    -------
+    np.ndarray
+        uint8 array of shape ``(H, W, 3)``.
+    """
+    # Graceful fallback for standard images
+    if r not in bands_dict and "red" in bands_dict:
+        r, g, b = "red", "green", "blue"
+
+    rgb = extract_bands(bands_dict, [r, g, b])  # (3, H, W)
+    rgb = rgb.astype(np.float32)
+
+    # Per-channel 2nd/98th percentile stretch for visual clarity
+    for i in range(3):
+        channel = rgb[i]
+        p2 = np.percentile(channel, 2)
+        p98 = np.percentile(channel, 98)
+        if p98 - p2 > 0:
+            channel = (channel - p2) / (p98 - p2)
+        else:
+            channel = np.zeros_like(channel)
+        rgb[i] = np.clip(channel, 0.0, 1.0)
+
+    # (3, H, W) -> (H, W, 3), scale to uint8
+    rgb = np.transpose(rgb, (1, 2, 0))
+    return (rgb * 255).astype(np.uint8)

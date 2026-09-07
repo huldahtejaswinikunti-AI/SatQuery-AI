@@ -1,34 +1,201 @@
+"""Deterministic, rule-based task router.
+
+Classifies a (query, input_config) pair into a ``TaskType`` using keyword /
+phrase matching and input metadata — **zero model calls**.
+
+Public API
+----------
+route(query, input_config) -> tuple[TaskType, float]
+    Returns the matched task type and a confidence score (0.0–1.0).
+"""
+
 from __future__ import annotations
+
 import re
-from satquery.router.task_types import RoutingDecision, TaskType
-from satquery.validator.schemas import ValidationResult
+from typing import Any
 
-class TaskRouter:
-    GROUNDING_KEYWORDS = ["highlight", "segment", "locate", "where is", "show me", "mask", "find the", "bound"]
-    CAPTION_KEYWORDS = ["describe", "caption", "summary", "overview", "what is in", "tell me about"]
-    CHANGE_KEYWORDS = ["change", "difference", "before and after", "what changed", "increased", "decreased"]
-    FUSION_KEYWORDS = ["optical and sar", "sar and optical", "fuse", "fusion", "cross-modal", "radar and optical"]
+from satquery.router.task_types import TaskType
 
-    def route(self, validation_result: ValidationResult, query: str) -> RoutingDecision:
-        q_lower = query.strip().lower()
-        config = validation_result.detected_configuration
 
-        if config == "optical_sar_pair":
-            return RoutingDecision(task=TaskType.OPTICAL_SAR_FUSION, confidence=0.98, reasoning="Paired optical and SAR input.", invoked_tools=["spectral_indices", "sar_backscatter", "optical_sar_fusion"])
-        if config == "bitemporal_pair":
-            return RoutingDecision(task=TaskType.BITEMPORAL_CHANGE, confidence=0.98, reasoning="Bi-temporal pair detected.", invoked_tools=["tinycd_change", "cross_verification"])
-        if any(k in q_lower for k in self.FUSION_KEYWORDS):
-            return RoutingDecision(task=TaskType.OPTICAL_SAR_FUSION, confidence=0.92, reasoning="Fusion query requested.", invoked_tools=["spectral_indices", "sar_backscatter", "optical_sar_fusion"])
+# ---------------------------------------------------------------------------
+# Keyword / phrase banks — order matters (checked top-to-bottom)
+# ---------------------------------------------------------------------------
 
-        for kw in self.GROUNDING_KEYWORDS:
-            if kw in q_lower:
-                clean = re.sub(r"[^\w\s]", "", query).strip()
-                idx = clean.lower().find(kw)
-                target = clean[idx + len(kw):].strip() if idx != -1 else "target"
-                target = re.sub(r"^(the|a|an|in|of)\s+", "", target, flags=re.IGNORECASE)
-                return RoutingDecision(task=TaskType.GROUNDING, confidence=0.95, reasoning="Grounding request.", target_phrase=target or "target", invoked_tools=["clipseg_grounding", "spectral_indices"])
+# Strong keywords → confidence 1.0 when matched
+_CHANGE_KEYWORDS_STRONG: list[str] = [
+    "what changed",
+    "what has changed",
+    "before and after",
+    "change detection",
+    "temporal change",
+    "changes between",
+    "difference between",
+    "how has .* changed",
+]
 
-        if any(kw in q_lower for kw in self.CAPTION_KEYWORDS) or len(q_lower) == 0:
-            return RoutingDecision(task=TaskType.SINGLE_CAPTION, confidence=0.90, reasoning="Captioning request.", invoked_tools=["geochat_vqa"])
+# Weaker signals → confidence 0.7
+_CHANGE_KEYWORDS_WEAK: list[str] = [
+    "compared to",
+    "over time",
+    "evolution",
+    "difference",
+    "changed",
+    "change",
+]
 
-        return RoutingDecision(task=TaskType.SINGLE_VQA, confidence=0.88, reasoning="VQA query.", invoked_tools=["geochat_vqa", "spectral_indices", "cross_verification"])
+_GROUNDING_KEYWORDS_STRONG: list[str] = [
+    "where is",
+    "where are",
+    "highlight",
+    "bounding box",
+    "show me the location",
+    "point to",
+    "locate the",
+    "localize",
+]
+
+_GROUNDING_KEYWORDS_WEAK: list[str] = [
+    "locate",
+    "mark",
+    "show me",
+    "find the",
+    "identify the location",
+]
+
+_CAPTION_KEYWORDS_STRONG: list[str] = [
+    "describe this image",
+    "describe the image",
+    "caption this",
+    "generate a caption",
+    "what is in this image",
+    "summarize the scene",
+    "tell me about this image",
+]
+
+_CAPTION_KEYWORDS_WEAK: list[str] = [
+    "describe",
+    "caption",
+    "summarize",
+    "overview of",
+    "tell me about",
+]
+
+
+def _matches(text: str, patterns: list[str]) -> bool:
+    """Return True if *text* matches any pattern (supports simple regex)."""
+    for pattern in patterns:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+class RouteResult(tuple):
+    """Result of route() that can be unpacked as (task, confidence)
+    or used directly as a TaskType (equality with TaskType and str supported).
+    """
+
+    def __new__(cls, task: TaskType, confidence: float):
+        return super().__new__(cls, (task, float(confidence)))
+
+    @property
+    def task(self) -> TaskType:
+        return self[0]
+
+    @property
+    def confidence(self) -> float:
+        return self[1]
+
+    @property
+    def value(self) -> str:
+        return self[0].value
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, TaskType):
+            return self[0] == other
+        if isinstance(other, str):
+            return self[0].value == other or self[0] == other
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self[0])
+
+    def __repr__(self) -> str:
+        return f"RouteResult(task={self[0]!r}, confidence={self[1]})"
+
+
+def route(
+    query: str,
+    input_config: dict[str, Any],
+) -> RouteResult:
+    """Route a query to a ``TaskType`` deterministically.
+
+    Parameters
+    ----------
+    query : str
+        User's natural-language question.
+    input_config : dict
+        Must contain:
+        - ``image_count`` (int): number of images (1 or 2).
+        - ``modalities`` (list[str]): per-image modality strings
+          (``"optical"``, ``"sar"``, ``"unknown"``).
+
+    Returns
+    -------
+    RouteResult
+        Can be unpacked as ``(task, confidence)`` or used directly
+        as a ``TaskType``.
+        Confidence scores:
+        - 1.0 — strong keyword match.
+        - 0.7 — weaker/partial keyword match.
+        - 0.3 — fallback based on input shape alone.
+    """
+    q = query.strip().lower()
+    image_count: int = input_config.get("image_count", 1)
+    modalities: list[str] = input_config.get("modalities", [])
+
+    # ------------------------------------------------------------------
+    # 1. CHANGE_VQA — requires 2 images + temporal/change language
+    # ------------------------------------------------------------------
+    if image_count == 2:
+        if _matches(q, _CHANGE_KEYWORDS_STRONG):
+            return RouteResult(TaskType.CHANGE_VQA, 1.0)
+        if _matches(q, _CHANGE_KEYWORDS_WEAK):
+            return RouteResult(TaskType.CHANGE_VQA, 0.7)
+
+    # ------------------------------------------------------------------
+    # 2. OPTICAL_SAR_FUSION — 2 images, one optical + one SAR
+    # ------------------------------------------------------------------
+    if image_count == 2:
+        modality_set = set(modalities)
+        if "optical" in modality_set and "sar" in modality_set:
+            return RouteResult(TaskType.OPTICAL_SAR_FUSION, 1.0)
+
+    # ------------------------------------------------------------------
+    # 3. GROUNDING — spatial keywords (any image count)
+    # ------------------------------------------------------------------
+    if _matches(q, _GROUNDING_KEYWORDS_STRONG):
+        return RouteResult(TaskType.GROUNDING, 1.0)
+    if _matches(q, _GROUNDING_KEYWORDS_WEAK):
+        return RouteResult(TaskType.GROUNDING, 0.7)
+
+    # ------------------------------------------------------------------
+    # 4. SINGLE_CAPTION — captioning keywords
+    # ------------------------------------------------------------------
+    if _matches(q, _CAPTION_KEYWORDS_STRONG):
+        return RouteResult(TaskType.SINGLE_CAPTION, 1.0)
+    if _matches(q, _CAPTION_KEYWORDS_WEAK):
+        return RouteResult(TaskType.SINGLE_CAPTION, 0.7)
+
+    # ------------------------------------------------------------------
+    # 5. Fallback — SINGLE_VQA (default for single-image questions)
+    # ------------------------------------------------------------------
+    if image_count == 2:
+        # Two images but no change/fusion signal — low confidence
+        return RouteResult(TaskType.CHANGE_VQA, 0.3)
+
+    return RouteResult(TaskType.SINGLE_VQA, 0.3)
