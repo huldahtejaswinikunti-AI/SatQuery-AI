@@ -1,2 +1,11 @@
-from satquery.cross_verification.verifier import CrossVerifier, VerificationResult
-__all__ = ["CrossVerifier", "VerificationResult"]
+from satquery.cross_verification.verifier import (
+    verify,
+    CrossVerifier,
+    VerificationResult,
+)
+
+__all__ = [
+    "verify",
+    "CrossVerifier",
+    "VerificationResult",
+]
