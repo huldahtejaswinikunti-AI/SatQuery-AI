@@ -25,10 +25,9 @@ MODEL_REGISTRY: dict[str, str] = {
     # ^^ After fine-tuning, push the ResNet-18 checkpoint to this Hub repo
     # so teammates can pull it with `download_one("land_cover")`.
 
-    # --- Teammate entries (add here) ---------------------------------------
-    # "clipseg":  "CIDAS/clipseg-rd64",
-    # "tinycd":   "AndreaCodegoni/Tiny_model_4_CD",
-    # "phrasing": "microsoft/Phi-3-mini-4k-instruct",
+    # --- Vision & Change Specialists ---------------------------------------
+    "clipseg": "CIDAS/clipseg-rd64",
+    "tinycd": "AndreaCodegoni/Tiny_model_4_CD",
     # -----------------------------------------------------------------------
 }
 
