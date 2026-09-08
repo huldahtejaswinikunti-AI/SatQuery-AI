@@ -154,23 +154,16 @@ def train_lora_cli(
     except Exception:
         pass
 
-    logger.info("Loading %s with 4-bit NF4 quantization (safetensors format)...", model_id)
-    try:
-        model = LlavaForConditionalGeneration.from_pretrained(
-            model_id,
-            revision="refs/pr/2",
-            quantization_config=bnb_config,
-            device_map="auto",
-            torch_dtype=torch.float16,
-        )
-    except Exception as err:
-        logger.warning("Falling back to default revision: %s", err)
-        model = LlavaForConditionalGeneration.from_pretrained(
-            model_id,
-            quantization_config=bnb_config,
-            device_map="auto",
-            torch_dtype=torch.float16,
-        )
+    logger.info("Loading %s with 4-bit NF4 quantization from local cache...", model_id)
+    max_mem = {0: "4.5GiB", "cpu": "12GiB"} if (vram_gb > 0 and vram_gb < 10.0) else None
+    model = LlavaForConditionalGeneration.from_pretrained(
+        model_id,
+        quantization_config=bnb_config,
+        device_map="auto",
+        max_memory=max_mem,
+        low_cpu_mem_usage=True,
+        torch_dtype=torch.float16,
+    )
     processor = LlavaProcessor.from_pretrained(model_id)
 
     model = prepare_model_for_kbit_training(model)
