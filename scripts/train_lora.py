@@ -164,7 +164,10 @@ def train_lora_cli(
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
     )
-    processor = LlavaProcessor.from_pretrained(model_id)
+    try:
+        processor = LlavaProcessor.from_pretrained(model_id)
+    except Exception:
+        processor = LlavaProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
 
     model = prepare_model_for_kbit_training(model)
     if hasattr(model, "gradient_checkpointing_enable"):

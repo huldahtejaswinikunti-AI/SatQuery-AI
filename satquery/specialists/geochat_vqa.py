@@ -91,7 +91,10 @@ def load_model(
         torch_dtype=torch.float16,
     )
 
-    _processor = LlavaProcessor.from_pretrained(model_id)
+    try:
+        _processor = LlavaProcessor.from_pretrained(model_id)
+    except Exception:
+        _processor = LlavaProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
 
     # --- LoRA adapter -------------------------------------------------------
     adapter_dir = Path(lora_adapter_dir) if lora_adapter_dir else _LORA_ADAPTER_DIR
