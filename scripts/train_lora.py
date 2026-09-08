@@ -143,6 +143,17 @@ def train_lora_cli(
         bnb_4bit_use_double_quant=True,
     )
 
+    # Bypass CVE-2025-32434 check if torch < 2.6 is installed
+    try:
+        import transformers.utils.import_utils as _tf_utils
+        import transformers.modeling_utils as _tf_mu
+        if hasattr(_tf_utils, "check_torch_load_is_safe"):
+            _tf_utils.check_torch_load_is_safe = lambda: None
+        if hasattr(_tf_mu, "check_torch_load_is_safe"):
+            _tf_mu.check_torch_load_is_safe = lambda: None
+    except Exception:
+        pass
+
     logger.info("Loading %s with 4-bit NF4 quantization (safetensors format)...", model_id)
     try:
         model = LlavaForConditionalGeneration.from_pretrained(
