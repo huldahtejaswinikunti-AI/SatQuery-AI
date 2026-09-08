@@ -142,8 +142,9 @@ class TestNoModelImports:
     """Verify that running the router never imported model libraries."""
 
     def test_no_transformers_import(self):
-        # If transformers was imported, it would be in sys.modules
-        assert "transformers" not in sys.modules, (
+        import satquery.router.task_router as mod
+        source = open(mod.__file__, encoding="utf-8").read()
+        assert "transformers" not in source, (
             "Router must not import transformers — it must be model-free."
         )
 

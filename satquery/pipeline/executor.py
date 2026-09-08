@@ -97,13 +97,15 @@ except ImportError:
     verify = _stub_specialist("satquery.cross_verification.verifier.verify")
 
 
-_TASK_DISPATCH: dict[TaskType, tuple[Any, str]] = {
-    TaskType.SINGLE_VQA: (run_vqa, "vqa"),
-    TaskType.SINGLE_CAPTION: (run_caption, "captioning"),
-    TaskType.GROUNDING: (run_grounding, "grounding"),
-    TaskType.CHANGE_VQA: (run_change_vqa, "change_detection"),
-    TaskType.OPTICAL_SAR_FUSION: (run_fusion, "fusion"),
-}
+def _get_specialist(task: TaskType) -> tuple[Any, str]:
+    dispatch: dict[TaskType, tuple[Any, str]] = {
+        TaskType.SINGLE_VQA: (globals().get("run_vqa", run_vqa), "vqa"),
+        TaskType.SINGLE_CAPTION: (globals().get("run_caption", run_caption), "captioning"),
+        TaskType.GROUNDING: (globals().get("run_grounding", run_grounding), "grounding"),
+        TaskType.CHANGE_VQA: (globals().get("run_change_vqa", run_change_vqa), "change_detection"),
+        TaskType.OPTICAL_SAR_FUSION: (globals().get("run_fusion", run_fusion), "fusion"),
+    }
+    return dispatch[task]
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +158,7 @@ def execute(
     timestamp = datetime.now(timezone.utc).isoformat()
 
     # --- Step 1: Call specialist ---
-    specialist_fn, specialist_name = _TASK_DISPATCH[task]
+    specialist_fn, specialist_name = _get_specialist(task)
     tools_invoked.append(specialist_name)
 
     facts = _call_with_retry(
@@ -166,7 +168,7 @@ def execute(
     # --- Step 2: Cross-verification ---
     tools_invoked.append("cross_verification")
     verified_facts = _call_with_retry(
-        lambda inp: verify(facts),  # verify takes facts, not input
+        lambda inp: globals().get("verify", verify)(facts),  # verify takes facts, not input
         validated_input,
         task,
         "cross_verification",
@@ -175,7 +177,7 @@ def execute(
     # --- Step 3: Phrasing ---
     tools_invoked.append("phrasing_llm")
     answer = _call_with_retry(
-        lambda inp: phrase(verified_facts),
+        lambda inp: globals().get("phrase", phrase)(verified_facts),
         validated_input,
         task,
         "phrasing_llm",
