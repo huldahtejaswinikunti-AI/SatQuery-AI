@@ -1,82 +1,82 @@
 [
   {
     "epoch": 1,
-    "train_loss": 0.35927,
-    "val_loss": 0.34545,
+    "train_loss": 0.36314,
+    "val_loss": 0.34537,
     "val_f1": 0.0,
     "lr": 0.0009755,
-    "time_s": 107.1
+    "time_s": 97.6
   },
   {
     "epoch": 2,
-    "train_loss": 0.34527,
-    "val_loss": 0.34472,
+    "train_loss": 0.34501,
+    "val_loss": 0.34542,
     "val_f1": 0.0,
     "lr": 0.0009045,
-    "time_s": 19.6
+    "time_s": 20.9
   },
   {
     "epoch": 3,
-    "train_loss": 0.34242,
-    "val_loss": 0.34226,
+    "train_loss": 0.34348,
+    "val_loss": 0.34082,
     "val_f1": 0.0,
     "lr": 0.0007939,
-    "time_s": 26.5
+    "time_s": 25.1
   },
   {
     "epoch": 4,
-    "train_loss": 0.33848,
-    "val_loss": 0.3422,
+    "train_loss": 0.33948,
+    "val_loss": 0.34063,
     "val_f1": 0.0,
     "lr": 0.0006545,
-    "time_s": 25.3
+    "time_s": 25.4
   },
   {
     "epoch": 5,
-    "train_loss": 0.3366,
-    "val_loss": 0.34576,
+    "train_loss": 0.33759,
+    "val_loss": 0.34522,
     "val_f1": 0.0,
     "lr": 0.0005,
-    "time_s": 23.8
-  },
-  {
-    "epoch": 6,
-    "train_loss": 0.33207,
-    "val_loss": 0.34685,
-    "val_f1": 0.0008,
-    "lr": 0.0003455,
-    "time_s": 26.0
-  },
-  {
-    "epoch": 7,
-    "train_loss": 0.32005,
-    "val_loss": 0.37069,
-    "val_f1": 0.0042,
-    "lr": 0.0002061,
     "time_s": 25.8
   },
   {
+    "epoch": 6,
+    "train_loss": 0.33463,
+    "val_loss": 0.35467,
+    "val_f1": 0.0,
+    "lr": 0.0003455,
+    "time_s": 24.8
+  },
+  {
+    "epoch": 7,
+    "train_loss": 0.32678,
+    "val_loss": 0.36092,
+    "val_f1": 0.0058,
+    "lr": 0.0002061,
+    "time_s": 25.4
+  },
+  {
     "epoch": 8,
-    "train_loss": 0.2964,
-    "val_loss": 0.37418,
-    "val_f1": 0.0028,
+    "train_loss": 0.31009,
+    "val_loss": 0.36845,
+    "val_f1": 0.0036,
     "lr": 9.55e-05,
-    "time_s": 26.6
+    "time_s": 27.8
   },
   {
     "epoch": 9,
-    "train_loss": 0.26235,
-    "val_loss": 0.39187,
-    "val_f1": 0.0047,
+    "train_loss": 0.28215,
+    "val_loss": 0.38016,
+    "val_f1": 0.0039,
     "lr": 2.45e-05,
-    "time_s": 25.2
+    "time_s": 27.2
   },
   {
     "epoch": 10,
-    "train_loss": 0.22576,
-    "val_loss": 0.39185,
-    "val_f1": 0.0065,
+    "train_loss": 0.25317,
+    "val_loss": 0.37868,
+    "val_f1": 0.0056,
     "lr": 0.0,
-    "time_s": 24.4
+    "time_s": 25.9
   }
 ]
