@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Paths & constants
 # ---------------------------------------------------------------------------
-_MODEL_ID = "MBZUAI/geochat-7B"
+_MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 _LORA_ADAPTER_DIR = Path(__file__).resolve().parent.parent.parent / "models" / "geochat" / "lora_adapter"
 
 # Module-level singletons (lazy-loaded)
@@ -105,8 +105,11 @@ def load_model(
 
         logger.info("Loading LoRA adapter from %s", adapter_dir)
         _model = PeftModel.from_pretrained(_model, str(adapter_dir))
-        _model = _model.merge_and_unload()
-        logger.info("LoRA adapter merged successfully.")
+        try:
+            _model = _model.merge_and_unload()
+            logger.info("LoRA adapter merged successfully.")
+        except Exception as e:
+            logger.info("LoRA adapter attached (unmerged 4-bit inference): %s", e)
     else:
         logger.info("No LoRA adapter found at %s — running base model zero-shot.", adapter_dir)
 

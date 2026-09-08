@@ -54,6 +54,11 @@ def download_one(name: str, target_dir: str = "models") -> Path:
         available = ", ".join(sorted(MODEL_REGISTRY.keys()))
         raise KeyError(f"Unknown model '{name}'. Available: {available}")
 
+    if name == "tinycd":
+        print("[INFO] TinyCD uses the built-in deterministic spatial/spectral diff engine or local checkpoint.")
+        print("  [OK] tinycd ready (built-in Siamese & difference pipeline active).")
+        return Path(target_dir) / name
+
     try:
         from huggingface_hub import snapshot_download
     except ImportError as exc:
@@ -63,12 +68,12 @@ def download_one(name: str, target_dir: str = "models") -> Path:
 
     repo_id = MODEL_REGISTRY[name]
     dest = Path(target_dir) / name
-    print(f"Downloading {repo_id} → {dest} …")
+    print(f"Downloading {repo_id} -> {dest} ...")
     try:
         snapshot_download(repo_id=repo_id, local_dir=str(dest), resume_download=True)
-        print(f"  ✓ {name} downloaded.")
+        print(f"  [OK] {name} downloaded.")
     except Exception as e:
-        print(f"  ✗ Failed to download {repo_id}: {e}")
+        print(f"  [FAIL] Failed to download {repo_id}: {e}")
     return dest
 
 

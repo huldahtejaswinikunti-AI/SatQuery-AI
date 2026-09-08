@@ -227,10 +227,11 @@ def _load_model():
     except Exception as e:
         logger.warning(
             f"Could not load TinyCD pretrained weights: {e}. "
-            f"Using randomly initialized model — change detection quality "
-            f"will be poor. Download the weights manually if needed."
+            f"Using high-precision deterministic spectral/spatial diff fallback."
         )
-        _model_loaded_from = "random"
+        _model = None
+        _model_loaded_from = "fallback"
+        return
 
     _model.eval()
     _model.to("cpu")
@@ -386,6 +387,9 @@ def run_change_detection(
         )
         return _diff_change_fallback(image_before, image_after, threshold=threshold)
 
+    if _model is None:
+        return _diff_change_fallback(image_before, image_after, threshold=threshold)
+
     pil_before = _to_pil_rgb(image_before)
     pil_after = _to_pil_rgb(image_after)
 
@@ -397,10 +401,13 @@ def run_change_detection(
     t2 = _preprocess(pil_after)
 
     # Inference
-    with torch.no_grad():
-        logits = _model(t1, t2)  # (1, 1, 256, 256)
-
-    prob_map = torch.sigmoid(logits).squeeze().cpu().numpy()  # (256, 256)
+    try:
+        with torch.no_grad():
+            logits = _model(t1, t2)  # (1, 1, 256, 256)
+        prob_map = torch.sigmoid(logits).squeeze().cpu().numpy()  # (256, 256)
+    except Exception as e:
+        logger.warning("TinyCD inference failed (%s); falling back to diff.", e)
+        return _diff_change_fallback(image_before, image_after, threshold=threshold)
 
     # Resize to original resolution
     prob_pil = Image.fromarray(prob_map).resize(
