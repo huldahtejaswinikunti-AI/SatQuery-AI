@@ -143,13 +143,23 @@ def train_lora_cli(
         bnb_4bit_use_double_quant=True,
     )
 
-    logger.info("Loading %s with 4-bit NF4 quantization...", model_id)
-    model = LlavaForConditionalGeneration.from_pretrained(
-        model_id,
-        quantization_config=bnb_config,
-        device_map="auto",
-        torch_dtype=torch.float16,
-    )
+    logger.info("Loading %s with 4-bit NF4 quantization (safetensors format)...", model_id)
+    try:
+        model = LlavaForConditionalGeneration.from_pretrained(
+            model_id,
+            revision="refs/pr/2",
+            quantization_config=bnb_config,
+            device_map="auto",
+            torch_dtype=torch.float16,
+        )
+    except Exception as err:
+        logger.warning("Falling back to default revision: %s", err)
+        model = LlavaForConditionalGeneration.from_pretrained(
+            model_id,
+            quantization_config=bnb_config,
+            device_map="auto",
+            torch_dtype=torch.float16,
+        )
     processor = LlavaProcessor.from_pretrained(model_id)
 
     model = prepare_model_for_kbit_training(model)
