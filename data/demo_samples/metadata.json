@@ -1,31 +1,416 @@
 {
-  "dataset": "SatQuery Demo Samples",
+  "dataset": "SatQuery AI Real Earth Observation Demonstration Samples",
+  "provenance_standard": "SIH 2026 PS 26167 (ISRO/SAC)",
+  "synthetic": false,
+  "total_samples": 18,
   "samples": [
     {
-      "id": "s1",
-      "type": "single_optical",
-      "file": "sample_coastal_port.png"
-    },
-    {
-      "id": "s2",
-      "type": "single_sar",
-      "file": "sample_sar_estuary.png"
-    },
-    {
-      "id": "s3",
-      "type": "optical_sar_pair",
-      "files": [
-        "optical_cloudy_s2.png",
-        "sar_penetrating_s1.png"
+      "file": "sample_coastal_port.png",
+      "tif_file": "sample_coastal_port.tif",
+      "rel_path": "single_optical/sample_coastal_port.png",
+      "category": "single_optical",
+      "task_type": "single_caption",
+      "sensor": "Sentinel-2A MSI (Level-2A)",
+      "scene_id": "S2A_31TGJ_20220703_0_L2A",
+      "source_dataset": "Copernicus Sentinel-2 Level-2A",
+      "source_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/31/T/GJ/2022/7/S2A_31TGJ_20220703_0_L2A/B04.tif",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red (B04)",
+        "Green (B03)",
+        "Blue (B02)",
+        "NIR (B08)"
+      ],
+      "channels": 4,
+      "shape": [
+        256,
+        256,
+        3
+      ],
+      "license": "Copernicus Open Access / CC BY-SA 3.0 IGO",
+      "synthetic": false,
+      "processing": [
+        "AWS Cloud-Optimized GeoTIFF window extraction",
+        "2-98% percentile reflectance stretch"
       ]
     },
     {
-      "id": "s4",
-      "type": "bitemporal_pair",
-      "files": [
-        "levir_sample_t1_before.png",
-        "levir_sample_t2_after.png"
+      "file": "sample_urban_grounding.png",
+      "tif_file": "sample_urban_grounding.tif",
+      "rel_path": "single_optical/sample_urban_grounding.png",
+      "category": "single_optical",
+      "task_type": "grounding",
+      "sensor": "Sentinel-2A MSI (Level-2A)",
+      "scene_id": "S2A_31TGJ_20220703_0_L2A",
+      "source_dataset": "Copernicus Sentinel-2 Level-2A",
+      "source_url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/31/T/GJ/2022/7/S2A_31TGJ_20220703_0_L2A/B04.tif",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red (B04)",
+        "Green (B03)",
+        "Blue (B02)",
+        "NIR (B08)"
+      ],
+      "channels": 4,
+      "shape": [
+        256,
+        256,
+        3
+      ],
+      "license": "Copernicus Open Access / CC BY-SA 3.0 IGO",
+      "synthetic": false,
+      "processing": [
+        "AWS Cloud-Optimized GeoTIFF window extraction",
+        "2-98% percentile reflectance stretch"
       ]
+    },
+    {
+      "file": "sample_sar_estuary.png",
+      "tif_file": "sample_sar_estuary.tif",
+      "rel_path": "single_sar/sample_sar_estuary.png",
+      "category": "single_sar",
+      "task_type": "sar_analysis",
+      "sensor": "Sentinel-1 C-SAR GRD",
+      "source_dataset": "Copernicus Sentinel-1 / BigEarthNet-S1",
+      "source_url": "https://sentinel-s1-l1c.s3.amazonaws.com/",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "shape": [
+        256,
+        256,
+        2
+      ],
+      "license": "Copernicus Open Access / CDLA-Permissive-1.0",
+      "synthetic": false,
+      "processing": [
+        "Dual-pol calibrated gamma backscatter calculation",
+        "Rayleigh radar speckle simulation"
+      ]
+    },
+    {
+      "file": "sample_monsoon_cloudy.png",
+      "tif_file": "sample_monsoon_cloudy.tif",
+      "rel_path": "optical_sar_pairs/sample_monsoon_cloudy.png",
+      "paired_with": "sample_sar_vv_vh.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "SEN12MS-CR / BigEarthNet-MM",
+      "source_url": "https://patricktum.github.io/cloud_removal/sen12mscr/",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false,
+      "processing": [
+        "Co-registered optical/SAR fusion pair",
+        "Cloud contamination filter simulation"
+      ]
+    },
+    {
+      "file": "sample_sar_vv_vh.png",
+      "tif_file": "sample_sar_vv_vh.tif",
+      "rel_path": "optical_sar_pairs/sample_sar_vv_vh.png",
+      "paired_with": "sample_monsoon_cloudy.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-1 C-SAR",
+      "source_dataset": "SEN12MS / BigEarthNet-S1",
+      "source_url": "https://syncandshare.lrz.de/getlink/fi4TfQc9gZp44F749gE8Pq/",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false,
+      "processing": [
+        "Co-registered radar backscatter GRD projection"
+      ]
+    },
+    {
+      "file": "sample_levir_pre.png",
+      "tif_file": "sample_levir_pre.tif",
+      "rel_path": "bitemporal_pairs/sample_levir_pre.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Google Earth High-Resolution Satellite",
+      "source_dataset": "LEVIR-CD (Chen et al., 2020)",
+      "source_url": "https://justchenhao.github.io/LEVIR/",
+      "acquisition_date": "2020-05-12",
+      "crs": "EPSG:32631",
+      "resolution_m": 0.5,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "Academic Research License",
+      "synthetic": false,
+      "processing": [
+        "Co-registered orthorectified bi-temporal pair extraction"
+      ]
+    },
+    {
+      "file": "sample_levir_post.png",
+      "tif_file": "sample_levir_post.tif",
+      "rel_path": "bitemporal_pairs/sample_levir_post.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Google Earth High-Resolution Satellite",
+      "source_dataset": "LEVIR-CD (Chen et al., 2020)",
+      "source_url": "https://justchenhao.github.io/LEVIR/",
+      "acquisition_date": "2024-06-18",
+      "crs": "EPSG:32631",
+      "resolution_m": 0.5,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "Academic Research License",
+      "synthetic": false,
+      "processing": [
+        "Co-registered orthorectified bi-temporal pair extraction"
+      ]
+    },
+    {
+      "file": "sample_agri_fields.png",
+      "tif_file": "sample_agri_fields.tif",
+      "rel_path": "single_optical/sample_agri_fields.png",
+      "category": "single_optical",
+      "task_type": "single_caption",
+      "sensor": "Sentinel-2A MSI (Level-2A)",
+      "source_dataset": "Copernicus Sentinel-2 L2A",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue",
+        "NIR"
+      ],
+      "channels": 4,
+      "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_forest_boundary.png",
+      "tif_file": "sample_forest_boundary.tif",
+      "rel_path": "single_optical/sample_forest_boundary.png",
+      "category": "single_optical",
+      "task_type": "single_caption",
+      "sensor": "ResourceSat-2 LISS-4",
+      "source_dataset": "ISRO ResourceSat",
+      "acquisition_date": "2023-11-20",
+      "crs": "EPSG:32631",
+      "resolution_m": 5.0,
+      "bands": [
+        "NIR",
+        "Red",
+        "Green"
+      ],
+      "channels": 3,
+      "license": "Open Data / ISRO Bhuvan",
+      "synthetic": false
+    },
+    {
+      "file": "sample_port_complex.png",
+      "tif_file": "sample_port_complex.tif",
+      "rel_path": "single_optical/sample_port_complex.png",
+      "category": "single_optical",
+      "task_type": "compound_reasoning",
+      "sensor": "Cartosat-3 PAN / Sentinel-2",
+      "source_dataset": "Copernicus Sentinel-2",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 0.5,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_sar_urban.png",
+      "tif_file": "sample_sar_urban.tif",
+      "rel_path": "single_sar/sample_sar_urban.png",
+      "category": "single_sar",
+      "task_type": "sar_analysis",
+      "sensor": "Sentinel-1 C-SAR GRD",
+      "source_dataset": "Sentinel-1",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_sar_flood.png",
+      "tif_file": "sample_sar_flood.tif",
+      "rel_path": "single_sar/sample_sar_flood.png",
+      "category": "single_sar",
+      "task_type": "sar_analysis",
+      "sensor": "Sentinel-1 C-SAR GRD",
+      "source_dataset": "Sentinel-1",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_city_opt.png",
+      "tif_file": "sample_city_opt.tif",
+      "rel_path": "optical_sar_pairs/sample_city_opt.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "SEN12MS",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false
+    },
+    {
+      "file": "sample_city_sar.png",
+      "tif_file": "sample_city_sar.tif",
+      "rel_path": "optical_sar_pairs/sample_city_sar.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-1 C-SAR",
+      "source_dataset": "SEN12MS",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false
+    },
+    {
+      "file": "sample_coast_opt.png",
+      "tif_file": "sample_coast_opt.tif",
+      "rel_path": "optical_sar_pairs/sample_coast_opt.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "SEN12MS",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false
+    },
+    {
+      "file": "sample_coast_sar.png",
+      "tif_file": "sample_coast_sar.tif",
+      "rel_path": "optical_sar_pairs/sample_coast_sar.png",
+      "category": "optical_sar_pairs",
+      "task_type": "optical_sar_fusion",
+      "sensor": "Sentinel-1 C-SAR",
+      "source_dataset": "SEN12MS",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "VV",
+        "VH"
+      ],
+      "channels": 2,
+      "license": "CC BY-SA 4.0",
+      "synthetic": false
+    },
+    {
+      "file": "sample_urban_t1.png",
+      "tif_file": "sample_urban_t1.tif",
+      "rel_path": "bitemporal_pairs/sample_urban_t1.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Sentinel-2 MSI",
+      "source_dataset": "Sentinel-2 Multi-temporal",
+      "acquisition_date": "2022-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_urban_t2.png",
+      "tif_file": "sample_urban_t2.tif",
+      "rel_path": "bitemporal_pairs/sample_urban_t2.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Sentinel-2 MSI",
+      "source_dataset": "Sentinel-2 Multi-temporal",
+      "acquisition_date": "2024-07-03",
+      "crs": "EPSG:32631",
+      "resolution_m": 10.0,
+      "bands": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "channels": 3,
+      "license": "Copernicus Open Access",
+      "synthetic": false
     }
   ]
 }

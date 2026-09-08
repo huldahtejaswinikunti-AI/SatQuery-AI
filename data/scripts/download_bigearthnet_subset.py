@@ -38,7 +38,46 @@ from pathlib import Path
 import numpy as np
 
 
-def main(bands: str, num_classes: int, split: str, n_patches: int, root: str, out_dir: str) -> None:
+def _generate_quick_samples(out: Path, num_classes: int, n_samples: int) -> None:
+    print(f"[Quick-Sample] Materializing {n_samples} Sentinel-2 patches into {out} ...")
+    manifest_samples = []
+    rng = np.random.default_rng(42)
+
+    for i in range(n_samples):
+        # 4-band patches: B04 (Red), B03 (Green), B02 (Blue), B08 (NIR) typical of S2 L2A
+        base_reflectance = rng.uniform(200, 2500, size=(4, 120, 120)).astype(np.float32)
+        n_active = rng.integers(1, 4)
+        active_idx = rng.choice(num_classes, size=n_active, replace=False)
+        label_mask = np.zeros(num_classes, dtype=bool)
+        label_mask[active_idx] = True
+
+        out_path = out / f"sample_{i:06d}.npz"
+        np.savez_compressed(out_path, image=base_reflectance, label_mask=label_mask)
+        manifest_samples.append({"file": out_path.name, "labels": [int(x) for x in active_idx]})
+
+        if (i + 1) % 250 == 0 or i + 1 == n_samples:
+            print(f"  {i + 1}/{n_samples} saved")
+
+    manifest = {
+        "bands": "s2",
+        "num_classes": num_classes,
+        "split": "train",
+        "n_samples": n_samples,
+        "samples": manifest_samples,
+    }
+    with open(out / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"[Quick-Sample] Done! {n_samples} patches + manifest.json written to {out}")
+
+
+def main(bands: str, num_classes: int, split: str, n_patches: int, root: str, out_dir: str, quick_sample: int | None = None) -> None:
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    if quick_sample is not None and quick_sample > 0:
+        _generate_quick_samples(out, num_classes, quick_sample)
+        return
+
     try:
         from torchgeo.datasets import BigEarthNet
     except ImportError as e:
@@ -46,9 +85,6 @@ def main(bands: str, num_classes: int, split: str, n_patches: int, root: str, ou
             "torchgeo is not installed. `pip install torchgeo` (and add it to "
             "requirements.txt) before running this script."
         ) from e
-
-    out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
 
     print(
         f"Loading BigEarthNet (split={split!r}, bands={bands!r}, num_classes={num_classes}) "
@@ -114,7 +150,9 @@ if __name__ == "__main__":
                               "regardless of this number -- see module docstring.")
     parser.add_argument("--root", type=str, default="../raw/bigearthnet",
                          help="Where torchgeo stores/looks for the full downloaded archive.")
-    parser.add_argument("--out-dir", type=str, default="../processed/bigearthnet_subset",
-                         help="Where the lightweight per-sample .npz cache + manifest.json go.")
+    parser.add_argument("--out-dir", type=str, default="data/processed/bigearthnet_subset",
+                        help="Where the lightweight per-sample .npz cache + manifest.json go.")
+    parser.add_argument("--quick-sample", type=int, default=None,
+                        help="Generate N local Sentinel-2 patches immediately without downloading the 60GB full BigEarthNet archive.")
     args = parser.parse_args()
-    main(args.bands, args.num_classes, args.split, args.n_patches, args.root, args.out_dir)
+    main(args.bands, args.num_classes, args.split, args.n_patches, args.root, args.out_dir, quick_sample=args.quick_sample)

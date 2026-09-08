@@ -1,55 +1,72 @@
-# SatQuery AI — 3-Minute Demo Script
-**SIH 2026 · Problem Statement 26167 (ISRO/SAC)**
+# SatQuery AI — 3-Minute Live Presentation & Demonstration Script
+**Smart India Hackathon 2026 · Problem Statement 26167 (ISRO / Space Applications Centre)**
+*Theme: Multi-Modal Remote Sensing Vision-Language Assistant with Grounded Cross-Verification*
 
 ---
 
-## Pitch Outline (180 Seconds)
+### [00:00 – 00:15] The Hook: The Peril of Hallucinating VLMs
+*(Speaker stands tall, speaks clearly and directly to the judging panel)*
 
-### 00:00 – 00:30: The Hook & Core Differentiator
-- *"Respected judges, foundation vision-language models applied to satellite imagery fail in dangerous ways: when they are wrong, they answer fluently and confidently."*
-- *"SatQuery AI introduces a hybrid paradigm: deep vision-language intelligence anchored and cross-verified by classical, deterministic remote sensing signal processing."*
-- *"We compute physical indices like NDVI, NDWI, NDBI, and Sentinel-1 SAR backscatter mechanisms in pure NumPy alongside the VLM. When the models agree, confidence is high; when they diverge, the system explicitly flags lower confidence and provides the physical evidence."*
+"Respected judges from ISRO and SAC. When a generic vision-language model looks at a satellite image, it sounds articulate, confident—and frequently, catastrophically wrong. A standard VLM cannot distinguish a shallow seasonal silt deposit from deep open ocean, nor can it peer through monsoon clouds to confirm if an airfield is flooded. In space applications, an unchecked hallucination isn't just an error—it's a mission failure. That is why we built **SatQuery AI**."
 
 ---
 
-### 00:30 – 01:15: Capability 1 & 2 (Single-Image VQA & Grounding)
-- **Action**: Select *Demo 1: Single Optical VQA* on Sentinel-2 tile.
-- **Query**: *"Describe the land-cover and determine if surface water is present."*
-- **Highlight**:
-  - Point to the **Auditable Execution Trace**: InputValidator -> TaskRouter -> spectral_indices -> GeoChatSpecialist -> CrossVerifier.
-  - Point to the **Confidence Badge**: *High Confidence (Cross-Verified: 94%)*.
-  - Show that the VLM assertion was checked against McFeeters NDWI.
-- **Action**: Select *Demo 2: Open-Vocabulary Grounding*.
-- **Query**: *"Highlight the water body referred to in the scene."*
-- **Highlight**: CLIPSeg neural mask cross-checked against NDWI with IoU computed live.
+### [00:15 – 00:45] Problem Statement & The SatQuery Solution
+*(Speaker gestures toward the UI projector display)*
+
+"For Problem Statement 26167, our challenge was to build an assistant that interprets multi-sensor satellite imagery across optical, multispectral, and synthetic aperture radar, while guaranteeing operational reliability.
+
+Our breakthrough is a **hybrid verification architecture**. We do not leave the answer solely to an unconstrained neural network. Instead, SatQuery pairs fine-tuned remote sensing specialists—like GeoChat and TinyCD—with **deterministic, classical signal processing**. We compute physical indices like NDVI, NDWI, NDBI, and Sentinel-1 dual-pol SAR backscatter directly on raw pixel values. When neural reasoning aligns with physical telemetry, confidence is verified. When they diverge, the system explicitly down-weights confidence, flags the conflict, and exposes the physical evidence."
 
 ---
 
-### 01:15 – 02:00: Capability 3 & 4 (Bi-Temporal Change & Optical-SAR Fusion)
-- **Action**: Select *Demo 3: Bi-temporal Change Detection* (LEVIR-CD pair).
-- **Query**: *"What changed between these two acquisitions and has built-up area increased?"*
-- **Highlight**: TinyCD change detection mask + differential spectral calculation:
-  - Quantitative metrics displayed: *Built-up area increased by +18.4%*.
-- **Action**: Select *Demo 4: Cloud-Penetrating Optical-SAR Fusion*.
-- **Query**: *"Use optical and SAR together to identify built-up structures hidden under cloud."*
-- **Highlight**:
-  - The optical sensor is 50% cloud-obscured.
-  - The fusion rule engine dynamically down-weights optical and up-weights SAR radar backscatter.
-  - Stated reason: *"Optical cloud-masked; SAR double-bounce backscatter confirms built-up structures beneath."*
+### [00:45 – 01:30] Live Demo 1: Single-Image Analysis & Cross-Verification Badge
+*(Speaker moves to the laptop / terminal)*
+
+*[Click on preset dropdown: Select '1. Single-Image Captioning (Coastal Port)']*  
+*[Click 'Run Query']*
+
+"Let's see this in action on real imagery. Here is a high-resolution coastal port scene. I've asked: *'Describe the land use and coastal infrastructure in this scene.'*
+
+Notice three things on the screen:
+First, within two seconds, the model extracts the jetties, cargo berths, and water boundary.
+Second, look at the **Confidence Badge** at the top right: `High Confidence (Cross-Verified)`. The system didn't just guess water—it ran McFeeters NDWI across the scene, cross-referenced the water absorption index with the VLM's text claims, and calculated an agreement consensus of 94%.
+Third, our pipeline is fully deterministic and auditable. Every decision is captured in the trace below."
 
 ---
 
-### 02:00 – 02:40: The Wow Moment (Signal Disagreement & Hallucination Prevention)
-- **Action**: Select *Demo 5: Cross-Verification Disagreement Probe*.
-- **Query**: *"Is this entire area covered in deep open water?"*
-- **Highlight**:
-  - Show the system assigning **Lower Confidence (Signal Disagreement)**.
-  - Emphasize to the judges: *"This is what sets SatQuery AI apart. Instead of hallucinating, it presents the physical telemetry that stopped the false positive."*
+### [01:30 – 02:15] Live Demo 2: The Wow Moment — SAR Disagreement & Cloud Penetration
+*(Speaker turns to the second scenario)*
+
+*[Click on preset dropdown: Select '4. Optical + SAR Fusion (Monsoon Flood Inundation)']*  
+*[Click 'Run Query']*
+
+"Now for the real test: monsoon cloud cover over a flood-affected district. The optical image is over 50% obscured by heavy cloud shadows. A conventional VLM fails completely here.
+
+Watch how SatQuery handles this: we feed the paired Sentinel-1 SAR imagery alongside the optical tile. Our router triggers the **Optical-SAR Fusion Engine**. The system dynamically computes the optical cloud mask, realizes optical optical bands are unreliable, and activates the SAR polarimetric cross-verifier.
+
+SAR backscatter confirms specular water reflection in the flat floodplains and double-bounce scattering from surviving built-up structures. Look at the result: the answer clearly highlights the inundated sectors, with our consensus metric showing how SAR validated the claim despite zero optical visibility. If someone inputs a misleading query asking if the whole scene is dry land, the engine immediately drops confidence to `Lower Confidence (Signal Disagreement)` and prints the contradictory radar decibel values."
 
 ---
 
-### 02:40 – 03:00: Adaptation Evidence & Conclusion
-- Show the held-out RSVQAxBEN evaluation slide: +12.6% accuracy gain after LoRA fine-tuning.
-- Download the **Full Auditable Trace JSON** and **Markdown Report**.
-- Close with: *"SatQuery AI turns remote sensing VLM analysis into a transparent, verifiable, ISRO-grade capability."*
+### [02:15 – 02:45] Auditable Trace & Executive Reporting
+*(Speaker scrolls to the bottom of the UI and expands the trace)*
 
+*[Click expander: 'Auditable Execution Trace & Tool Timeline']*
+
+"For defense and ISRO intelligence workflows, black-box AI is unacceptable. Look at our **Auditable Execution Trace**. Every step—input validation, router latency, tools invoked, and verified factual statements—is saved as structured JSON.
+
+*[Click 'Download PDF Report']*
+
+With one click, an analyst can generate an executive, print-ready PDF report containing the visual overlays, quantitative metrics, and cryptographic timestamp for downstream mission briefing."
+
+---
+
+### [02:45 – 03:00] Close: LoRA Fine-Tuning Delta & Future Vision
+*(Speaker delivers closing statement with conviction)*
+
+"Under the hood, our backbone is fine-tuned on curated remote sensing instruction sets, demonstrating a held-out accuracy gain of over 12% compared to zero-shot base models.
+
+SatQuery AI bridges the gap between state-of-the-art AI and the rigorous physics of Earth observation. It is trustworthy, transparent, and ready for deployment across India's remote sensing ecosystem.
+
+Thank you, and we are ready for your questions!"

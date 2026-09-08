@@ -126,7 +126,7 @@ def sample_png(ensure_fixtures_dir) -> Path:
 
     p = FIXTURES_DIR / "sample.png"
     if not p.exists():
-        rng = np.default_rng(7)
+        rng = np.random.default_rng(7)
         arr = rng.integers(0, 256, (64, 64, 3), dtype=np.uint8)
         Image.fromarray(arr).save(str(p))
     return p
@@ -139,7 +139,7 @@ def sample_jpeg(ensure_fixtures_dir) -> Path:
 
     p = FIXTURES_DIR / "sample.jpg"
     if not p.exists():
-        rng = np.default_rng(11)
+        rng = np.random.default_rng(11)
         arr = rng.integers(0, 256, (64, 64, 3), dtype=np.uint8)
         Image.fromarray(arr).save(str(p))
     return p
@@ -152,7 +152,7 @@ def sample_grayscale_png(ensure_fixtures_dir) -> Path:
 
     p = FIXTURES_DIR / "gray.png"
     if not p.exists():
-        rng = np.default_rng(13)
+        rng = np.random.default_rng(13)
         arr = rng.integers(0, 256, (64, 64), dtype=np.uint8)
         Image.fromarray(arr, mode="L").save(str(p))
     return p

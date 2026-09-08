@@ -1,9 +1,137 @@
-.main-header { font-size: 2.2rem; font-weight: 700; color: #1E88E5; margin-bottom: 0.2rem; }
-.badge-container { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
-.badge-high-verified { background-color: rgba(46, 125, 50, 0.18); color: #2e7d32; border: 1px solid #2e7d32; }
-.badge-high-rule { background-color: rgba(2, 136, 209, 0.18); color: #0288d1; border: 1px solid #0288d1; }
-.badge-disagreement { background-color: rgba(239, 108, 0, 0.18); color: #ef6c00; border: 1px solid #ef6c00; }
-.badge-unverified { background-color: rgba(117, 117, 117, 0.18); color: #757575; border: 1px solid #757575; }
-.trace-step { background-color: #1a1e24; border-left: 3px solid #1E88E5; padding: 10px 14px; margin-bottom: 8px; border-radius: 4px; }
-.trace-step-name { font-weight: 600; color: #64B5F6; }
-.trace-duration { float: right; color: #90A4AE; font-size: 0.85rem; }
+/* =====================================================================
+   SatQuery AI -- Streamlit custom styles
+   Projector-safe: high contrast, large fonts, no low-contrast text.
+   Accessibility: visible :focus-visible outlines on all interactive
+   elements, badges use colour + icon/label (never colour alone).
+   ===================================================================== */
+
+/* ---- Typography (projector-safe minimums) ---- */
+.main-header {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #1E88E5;
+    margin-bottom: 2px;
+    letter-spacing: -0.5px;
+}
+.main-subtitle {
+    color: #B0BEC5;
+    font-size: 1.1rem;
+    margin-top: 0;
+    line-height: 1.5;
+}
+.main-meta {
+    font-size: 0.9rem;
+    color: #78909C;
+}
+
+/* ---- Confidence badges (colour + icon, never colour alone) ---- */
+.badge-container {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 22px;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    margin-right: 8px;
+    letter-spacing: 0.3px;
+}
+.badge-high-verified {
+    background-color: rgba(46, 125, 50, 0.2);
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+}
+.badge-high-rule {
+    background-color: rgba(2, 136, 209, 0.2);
+    color: #0288d1;
+    border: 2px solid #0288d1;
+}
+.badge-disagreement {
+    background-color: rgba(239, 108, 0, 0.2);
+    color: #ef6c00;
+    border: 2px solid #ef6c00;
+}
+.badge-unverified {
+    background-color: rgba(117, 117, 117, 0.2);
+    color: #757575;
+    border: 2px solid #757575;
+}
+.badge-error {
+    background-color: rgba(211, 47, 47, 0.2);
+    color: #d32f2f;
+    border: 2px solid #d32f2f;
+}
+.badge-semantic {
+    background-color: rgba(156, 39, 176, 0.15);
+    color: #9c27b0;
+    border: 2px solid #9c27b0;
+}
+
+/* ---- Consensus score headline ---- */
+.consensus-metric {
+    background: linear-gradient(135deg, rgba(33,150,243,0.1), rgba(76,175,80,0.1));
+    border: 1px solid rgba(33,150,243,0.3);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 1.15rem;
+    color: #E0E0E0;
+    margin-bottom: 1rem;
+}
+
+/* ---- Change direction ---- */
+.change-direction {
+    background-color: rgba(255, 152, 0, 0.08);
+    border-left: 3px solid #FF9800;
+    padding: 8px 14px;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #E0E0E0;
+}
+
+/* ---- Execution trace panel ---- */
+.trace-step {
+    background-color: #1a1e24;
+    border-left: 3px solid #1E88E5;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+.trace-step-name {
+    font-weight: 700;
+    color: #64B5F6;
+}
+.trace-duration {
+    float: right;
+    color: #90A4AE;
+    font-size: 0.9rem;
+}
+
+/* ---- Keyboard navigation: visible focus states ---- */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+.stButton > button:focus-visible {
+    outline: 3px solid #42A5F5 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(66, 165, 245, 0.3) !important;
+}
+
+/* ---- File uploader hint text ---- */
+.upload-hint {
+    font-size: 0.85rem;
+    color: #90A4AE;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+/* ---- Streamlit overrides for projector readability ---- */
+.stMarkdown p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+.stTextArea textarea {
+    font-size: 1rem;
+}

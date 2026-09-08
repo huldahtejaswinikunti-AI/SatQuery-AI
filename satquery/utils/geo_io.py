@@ -232,3 +232,82 @@ def _load_standard_image(filepath: Path) -> dict[str, Any]:
     }
 
     return {"bands": bands, "metadata": metadata}
+
+
+# ---------------------------------------------------------------------------
+# Convenience wrapper for Streamlit uploads
+# ---------------------------------------------------------------------------
+
+
+def load_image_as_array(
+    file_or_path,
+) -> tuple[np.ndarray, dict]:
+    """Load an image and return a stacked array plus metadata.
+
+    This is a convenience wrapper around ``load_image()`` that also
+    handles in-memory file objects (e.g. Streamlit ``UploadedFile``).
+
+    Parameters
+    ----------
+    file_or_path : str | Path | file-like
+        A filesystem path (str/Path) or an in-memory file object with
+        ``.name`` and ``.read()`` attributes (e.g. ``st.UploadedFile``).
+
+    Returns
+    -------
+    tuple[np.ndarray, dict]
+        ``(array, metadata)`` where *array* is shape ``(H, W, C)`` or
+        ``(H, W)`` and *metadata* is the dict from ``load_image()``.
+    """
+    import tempfile
+    from pathlib import Path as _Path
+
+    # If it's already a path string or Path object, use directly
+    if isinstance(file_or_path, (str, _Path)):
+        result = load_image(str(file_or_path))
+        arr = _bands_to_array(result["bands"])
+        meta = result["metadata"]
+        meta["filename"] = _Path(file_or_path).name
+        return arr, meta
+
+    # Otherwise treat as file-like (Streamlit UploadedFile)
+    name = getattr(file_or_path, "name", "upload.png")
+    suffix = _Path(name).suffix or ".png"
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(file_or_path.read())
+        tmp_path = tmp.name
+
+    try:
+        result = load_image(tmp_path)
+        arr = _bands_to_array(result["bands"])
+        meta = result["metadata"]
+        meta["filename"] = name
+        meta["path"] = tmp_path
+        return arr, meta
+    except Exception:
+        # Fallback: try PIL directly for common formats
+        from PIL import Image
+        file_or_path.seek(0)
+        img = Image.open(file_or_path)
+        arr = np.array(img)
+        meta = {
+            "filename": name,
+            "format": suffix.lstrip(".").upper(),
+            "band_count": 1 if arr.ndim == 2 else arr.shape[-1],
+            "width": arr.shape[1],
+            "height": arr.shape[0],
+            "crs": None,
+            "transform": None,
+            "bounds": None,
+        }
+        return arr, meta
+
+
+def _bands_to_array(bands: dict[str, np.ndarray]) -> np.ndarray:
+    """Stack a bands dict into a single (H, W, C) or (H, W) array."""
+    band_list = list(bands.values())
+    if len(band_list) == 1:
+        return band_list[0]
+    return np.stack(band_list, axis=-1)
+

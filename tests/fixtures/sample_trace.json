@@ -1,1 +1,51 @@
-{"trace_id": "test", "task": "single_vqa", "confidence": 0.95}
+{
+  "trace_id": "satquery-trace-2026-0908-01",
+  "task": "single_vqa",
+  "timestamp": "2026-09-08T12:00:00Z",
+  "execution_time_seconds": 1.84,
+  "tools_invoked": [
+    "InputValidator",
+    "TaskRouter",
+    "spectral_indices",
+    "GeoChatSpecialist",
+    "CrossVerifier"
+  ],
+  "raw_confidence": 0.94,
+  "confidence_tag": "VERIFIED_HIGH",
+  "consensus_score": 0.94,
+  "semantic_consistency": "AGREE",
+  "change_direction": null,
+  "validation_failure_reason": null,
+  "verified_facts": [
+    {
+      "fact": "Surface water body present across north-west sector",
+      "specialist": "McFeeters NDWI",
+      "verified": true,
+      "confidence": 0.96
+    },
+    {
+      "fact": "Concrete infrastructure and cargo berths detected along coastline",
+      "specialist": "Zha NDBI",
+      "verified": true,
+      "confidence": 0.92
+    },
+    {
+      "fact": "No dense canopy vegetation observed inside port perimeter",
+      "specialist": "Rouse NDVI",
+      "verified": true,
+      "confidence": 0.95
+    }
+  ],
+  "parameters": {
+    "query": "Describe the land use and coastal infrastructure in this scene.",
+    "input_shapes": [
+      [256, 256, 3]
+    ],
+    "bands": [
+      ["Red", "Green", "Blue"]
+    ],
+    "sensor": "Sentinel-2 MSI",
+    "crs": "EPSG:32643",
+    "ground_sampling_distance_m": 10.0
+  }
+}

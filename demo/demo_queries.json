@@ -1,33 +1,93 @@
 [
   {
+    "label": "1. Single-Image Captioning (Coastal Port)",
     "task": "single_caption",
-    "query": "Describe the land-cover and major objects visible in this image.",
-    "input_mode": "single_optical",
-    "expected_badge": "High Confidence (Cross-Verified)"
+    "query": "Describe the land use and coastal infrastructure in this scene.",
+    "input_mode": "single",
+    "sample_files": [
+      "single_optical/sample_coastal_port.png"
+    ],
+    "files": [
+      "sample_coastal_port.png"
+    ],
+    "expected_badge": "High Confidence (Cross-Verified)",
+    "why_this_matters_to_isro": "Automates maritime domain awareness and port facility monitoring from high-resolution Cartosat/Sentinel imagery without manual analyst annotation."
   },
   {
+    "label": "2. Open-Vocabulary Grounding (Industrial Zone)",
     "task": "grounding",
-    "query": "Highlight the water body referred to in the scene.",
-    "input_mode": "single_optical",
-    "expected_badge": "High Confidence (Cross-Verified)"
+    "query": "Locate the large industrial warehouse and any parking lots.",
+    "input_mode": "single",
+    "sample_files": [
+      "single_optical/sample_urban_grounding.png"
+    ],
+    "files": [
+      "sample_urban_grounding.png"
+    ],
+    "expected_badge": "High Confidence (Cross-Verified)",
+    "why_this_matters_to_isro": "Permits arbitrary natural-language target localisation for infrastructure audits and disaster risk mapping without pre-trained fixed-class detectors."
   },
   {
-    "task": "change_vqa",
-    "query": "What changed between these two dates, and has built-up area increased?",
-    "input_mode": "bitemporal_pair",
-    "expected_badge": "Deterministic Signal"
+    "label": "3. Bi-Temporal Change Detection (LEVIR-CD Urban Expansion)",
+    "task": "bitemporal_change",
+    "query": "What changed between these two dates? Has new construction occurred?",
+    "input_mode": "bitemporal",
+    "sample_files": [
+      "bitemporal_pairs/sample_levir_pre.png",
+      "bitemporal_pairs/sample_levir_post.png"
+    ],
+    "files": [
+      "sample_levir_pre.png",
+      "sample_levir_post.png"
+    ],
+    "expected_badge": "Deterministic Signal",
+    "why_this_matters_to_isro": "Provides quantifiable change percentages and visual masks to monitor unauthorized urban encroachment and infrastructure progress across multi-year revisit intervals."
   },
   {
+    "label": "4. Optical + SAR Fusion (Monsoon Flood Inundation)",
     "task": "optical_sar_fusion",
-    "query": "Use optical and SAR together to identify built-up structures hidden under cloud.",
-    "input_mode": "optical_sar_pair",
-    "expected_badge": "High Confidence (Cross-Verified)"
+    "query": "Identify flooded areas despite cloud cover using the paired SAR data.",
+    "input_mode": "fusion",
+    "sample_files": [
+      "optical_sar_pairs/sample_monsoon_cloudy.png",
+      "optical_sar_pairs/sample_sar_vv_vh.png"
+    ],
+    "files": [
+      "sample_monsoon_cloudy.png",
+      "sample_sar_vv_vh.png"
+    ],
+    "expected_badge": "High Confidence (Cross-Verified)",
+    "why_this_matters_to_isro": "Crucial for disaster management (NDRF/SAC) where optical sensors are blinded by monsoon overcast but Sentinel-1 / EOS-04 SAR penetrates cloud cover."
   },
   {
-    "task": "cross_verification_probe",
-    "query": "Is this entire area covered in deep open water?",
-    "input_mode": "single_optical",
-    "expected_badge": "Lower Confidence (Signal Disagreement)"
+    "label": "5. Built-Up Change Assessment (Multi-Temporal Urban)",
+    "task": "change_vqa",
+    "query": "Has built-up area increased in this region between the two acquisitions?",
+    "input_mode": "bitemporal",
+    "sample_files": [
+      "bitemporal_pairs/sample_urban_t1.png",
+      "bitemporal_pairs/sample_urban_t2.png"
+    ],
+    "files": [
+      "sample_urban_t1.png",
+      "sample_urban_t2.png"
+    ],
+    "expected_badge": "Deterministic Signal",
+    "why_this_matters_to_isro": "Enables automated regional reporting on urbanization rates and loss of permeable/agricultural land for national land-use policy."
+  },
+  {
+    "label": "6. Compound Query (Stretch: Port Activity & Wake Analysis)",
+    "task": "compound_reasoning",
+    "query": "Count the docked vessels, assess port activity level, and flag any anomalous wake patterns.",
+    "input_mode": "single",
+    "sample_files": [
+      "single_optical/sample_port_complex.png"
+    ],
+    "files": [
+      "sample_port_complex.png"
+    ],
+    "expected_badge": "High Confidence (Cross-Verified)",
+    "why_this_matters_to_isro": "Demonstrates multi-hop reasoning by chaining detection, perceptual metrics, and VLM synthesis for complex tactical surveillance.",
+    "notes": "compound reasoning via specialist chain"
   }
 ]
-
