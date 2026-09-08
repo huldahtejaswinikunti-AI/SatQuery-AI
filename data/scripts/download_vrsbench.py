@@ -84,7 +84,7 @@ def download_vrsbench_subset(out_dir: str | Path = "data/raw/vrsbench", max_samp
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download and prepare VRSBench dataset subset.")
-    parser.add_argument("--out-dir", default="data/raw/vrsbench", help="Destination folder")
+    parser.add_argument("--out-dir", "--target-dir", dest="out_dir", default="data/raw/vrsbench", help="Destination folder")
     parser.add_argument("--max-samples", type=int, default=200, help="Number of instruction pairs to prepare")
     args = parser.parse_args()
 

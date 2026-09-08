@@ -81,7 +81,7 @@ def prepare_cdvqa_subset(out_dir: str | Path = "data/raw/cdvqa", max_samples: in
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download and prepare CDVQA change dataset.")
-    parser.add_argument("--out-dir", default="data/raw/cdvqa", help="Output directory")
+    parser.add_argument("--out-dir", "--target-dir", dest="out_dir", default="data/raw/cdvqa", help="Output directory")
     parser.add_argument("--max-samples", type=int, default=200, help="Max question pairs")
     args = parser.parse_args()
 
