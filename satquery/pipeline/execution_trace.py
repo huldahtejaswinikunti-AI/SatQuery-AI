@@ -22,6 +22,7 @@ def build_trace(
     parameters: dict[str, Any],
     confidence: str,
     timestamp: str | None = None,
+    model_calibration: str | None = None,
 ) -> dict[str, Any]:
     """Build an execution trace conforming to the fixed contract.
 
@@ -39,6 +40,8 @@ def build_trace(
     timestamp : str | None
         ISO 8601 timestamp string.  If ``None``, the current UTC time
         is used.
+    model_calibration : str | None
+        Land cover classifier calibration status (e.g. 'untrained_fallback').
 
     Returns
     -------
@@ -68,6 +71,8 @@ def build_trace(
         "confidence": str(confidence),
         "timestamp": str(timestamp),
     }
+    if model_calibration is not None:
+        trace["model_calibration"] = str(model_calibration)
 
     # Belt-and-suspenders: verify JSON round-trip
     import json

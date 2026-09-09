@@ -134,6 +134,13 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
         "built_up_fraction": indices.built_up_fraction,
     }
 
+    from satquery.perception.spectral_interpretation import (
+        interpret_ndvi,
+        interpret_ndwi,
+        interpret_ndbi,
+        describe_dominant_land_cover,
+    )
+
     # Query-aware answer generation using REAL measurements
     q_lower = query.lower()
     if any(w in q_lower for w in ("water", "flood", "river", "sea", "ocean", "port", "coast", "lake")):
@@ -142,31 +149,20 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
             f"of the scene classified as water bodies. "
             f"Dominant land cover: {label_str} (top-1 confidence: {conf*100:.1f}%)."
         )
-        if water_frac > 5:
-            ans += f" Significant aquatic features confirmed by spectral reflectance."
-        else:
-            ans += f" Limited water presence detected in this scene."
+        ans += f" Reflectance profile confirms: {interpret_ndwi(ndwi)}."
     elif any(w in q_lower for w in ("tree", "forest", "crop", "vegetation", "agriculture", "green")):
         ans = (
             f"Vegetation analysis: NDVI index measures {ndvi:+.3f} with {veg_frac}% "
             f"vegetation coverage across the scene. "
             f"Land cover classification: {label_str} (confidence: {conf*100:.1f}%)."
         )
-        if ndvi > 0.3:
-            ans += " Dense, healthy vegetation canopy confirmed."
-        elif ndvi > 0.15:
-            ans += " Moderate vegetation presence with mixed ground cover."
-        else:
-            ans += " Sparse or stressed vegetation detected."
+        ans += f" Reflectance profile confirms: {interpret_ndvi(ndvi)}."
     elif any(w in q_lower for w in ("building", "urban", "structure", "industrial", "warehouse", "city", "settlement")):
         ans = (
             f"Built-up area analysis: NDBI index measures {ndbi:+.3f} with {built_frac}% "
             f"built-up coverage. Classification: {label_str} (confidence: {conf*100:.1f}%)."
         )
-        if built_frac > 10:
-            ans += " Significant urban/industrial infrastructure confirmed."
-        else:
-            ans += " Limited built-up structures in this scene."
+        ans += f" Reflectance profile confirms: {interpret_ndbi(ndbi)}."
     else:
         # General query — provide comprehensive breakdown
         top_desc = "; ".join(
@@ -188,6 +184,7 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
         "details": preds,
         "spectral_summary": spectral_summary,
         "top_k": top_k,
+        "model_calibration": preds.get("model_calibration", "calibrated"),
     }
 
 
@@ -236,45 +233,16 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
 
     desc = f"Satellite observation classified as: {top_classes}."
 
-    # Dominant land type description
-    dominant = max(
-        [("vegetation", veg_frac, ndvi), ("water", water_frac, ndwi), ("built-up", built_frac, ndbi)],
-        key=lambda x: x[1]
+    # Dominant land type description using unified four-way composition logic
+    from satquery.perception.spectral_interpretation import describe_dominant_land_cover
+    desc += " " + describe_dominant_land_cover(
+        veg_pct=veg_frac,
+        water_pct=water_frac,
+        built_pct=built_frac,
+        ndvi=ndvi,
+        ndwi=ndwi,
+        ndbi=ndbi,
     )
-    if dominant[0] == "vegetation" and veg_frac > 15:
-        desc += (
-            f" The scene is predominantly vegetated ({veg_frac}% coverage, "
-            f"NDVI: {ndvi:+.3f}), indicating "
-        )
-        if ndvi > 0.4:
-            desc += "dense, healthy canopy — likely forest or productive cropland."
-        elif ndvi > 0.2:
-            desc += "moderate vegetation density — mixed agricultural or grassland cover."
-        else:
-            desc += "sparse or stressed vegetation."
-    elif dominant[0] == "water" and water_frac > 5:
-        desc += (
-            f" Prominent water bodies detected ({water_frac}% coverage, "
-            f"NDWI: {ndwi:+.3f}), suggesting "
-        )
-        if water_frac > 30:
-            desc += "a major aquatic feature — lake, reservoir, or coastal zone."
-        else:
-            desc += "rivers, ponds, or irrigation infrastructure."
-    elif dominant[0] == "built-up" and built_frac > 5:
-        desc += (
-            f" Built-up structures dominate ({built_frac}% coverage, "
-            f"NDBI: {ndbi:+.3f}), indicating "
-        )
-        if built_frac > 25:
-            desc += "dense urban or industrial development."
-        else:
-            desc += "scattered settlements or infrastructure."
-    else:
-        desc += (
-            f" Mixed land cover: {veg_frac}% vegetation, "
-            f"{water_frac}% water, {built_frac}% built-up."
-        )
 
     # Add image metadata
     dims = image_stats.get("dimensions", f"{arr.shape[1]}x{arr.shape[0]}")
@@ -288,6 +256,7 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
         "details": preds,
         "spectral_summary": spectral_summary,
         "top_k": top_k,
+        "model_calibration": preds.get("model_calibration", "calibrated"),
     }
 
 
@@ -485,6 +454,9 @@ def execute(
             verified_facts["top_k"] = facts["top_k"]
         if "details" in facts and "details" not in verified_facts:
             verified_facts["details"] = facts["details"]
+        calib = facts.get("model_calibration") or (facts.get("details") or {}).get("model_calibration")
+        if calib and "model_calibration" not in verified_facts:
+            verified_facts["model_calibration"] = calib
 
     # --- Step 3: Phrasing ---
     tools_invoked.append("phrasing_llm")
@@ -502,6 +474,7 @@ def execute(
         parameters=parameters,
         confidence=str(router_confidence),
         timestamp=timestamp,
+        model_calibration=verified_facts.get("model_calibration"),
     )
 
     return {

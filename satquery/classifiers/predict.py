@@ -25,28 +25,39 @@ from satquery.classifiers.land_cover import (
 # ---------------------------------------------------------------------------
 _model: Optional[LandCoverModel] = None
 _device: Optional[str] = None
+_loaded_checkpoint: Optional[Path] = None
+_calibration_status: str = "untrained_fallback"
 
 _DEFAULT_CHECKPOINT = Path(__file__).resolve().parent.parent.parent / "models" / "land_cover" / "best_model.pt"
 
 
-def _ensure_model(checkpoint_path: Optional[Union[str, Path]] = None) -> LandCoverModel:
-    """Load the model once and cache it."""
-    global _model, _device
+def get_calibration_status(checkpoint_path: Optional[Union[str, Path]] = None) -> str:
+    """Return 'calibrated' if a valid checkpoint exists, else 'untrained_fallback'."""
+    ckpt = Path(checkpoint_path) if checkpoint_path else _DEFAULT_CHECKPOINT
+    return "calibrated" if ckpt.exists() else "untrained_fallback"
 
-    if _model is not None:
+
+def _ensure_model(checkpoint_path: Optional[Union[str, Path]] = None) -> LandCoverModel:
+    """Load the model once and cache it, reloading if checkpoint path changes."""
+    global _model, _device, _loaded_checkpoint, _calibration_status
+
+    ckpt = Path(checkpoint_path) if checkpoint_path else _DEFAULT_CHECKPOINT
+    if _model is not None and _loaded_checkpoint == ckpt:
         return _model
 
     _device = "cuda" if torch.cuda.is_available() else "cpu"
-    ckpt = Path(checkpoint_path) if checkpoint_path else _DEFAULT_CHECKPOINT
+    _loaded_checkpoint = ckpt
 
     if ckpt.exists():
         print(f"[land_cover] Loading fine-tuned checkpoint from {ckpt}")
         _model = LandCoverModel.load_from_checkpoint(ckpt, device=_device)
+        _calibration_status = "calibrated"
     else:
         print("[land_cover] No checkpoint found -- using ImageNet-pretrained backbone (untrained head).")
         _model = LandCoverModel(pretrained_backbone=True)
         _model.to(_device)
         _model.eval()
+        _calibration_status = "untrained_fallback"
 
     return _model
 
@@ -150,6 +161,7 @@ def predict(
         "top_k": top_k_list,
         "class_probabilities": all_probs,
         "image_stats": image_stats,
+        "model_calibration": _calibration_status,
     }
 
 
@@ -161,6 +173,10 @@ class LandCoverPredictor:
 
     def __init__(self, checkpoint_path: Optional[str] = None) -> None:
         self._ckpt = checkpoint_path
+
+    @property
+    def calibration_status(self) -> str:
+        return get_calibration_status(self._ckpt)
 
     def predict(
         self,

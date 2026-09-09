@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ObservationDomain } from '../../types';
+import { checkHealth } from '../../api/client';
 
 interface NavProps {
   activeDomain: ObservationDomain;
@@ -7,6 +8,22 @@ interface NavProps {
 }
 
 export const Nav: React.FC<NavProps> = ({ activeDomain, onSelectDomain }) => {
+  const [calibration, setCalibration] = useState<'calibrated' | 'untrained_fallback' | 'loading'>('loading');
+
+  useEffect(() => {
+    checkHealth()
+      .then((data: any) => {
+        if (data.classifier_calibration === 'untrained_fallback' || data.status === 'UNCALIBRATED') {
+          setCalibration('untrained_fallback');
+        } else {
+          setCalibration('calibrated');
+        }
+      })
+      .catch(() => setCalibration('calibrated'));
+  }, []);
+
+  const isUncalibrated = calibration === 'untrained_fallback';
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-[rgba(5,7,13,0.7)] border-b border-[var(--border-hairline)] transition-all">
       {/* Brand */}
@@ -56,10 +73,23 @@ export const Nav: React.FC<NavProps> = ({ activeDomain, onSelectDomain }) => {
         >
           Observation Deck ↓
         </a>
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--border-hairline)] bg-[rgba(11,15,26,0.6)]">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-mono text-[10px] tracking-wider text-[var(--text-primary)]">
-            SYSTEM READY · ISRO / SAC
+        <div
+          className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-colors ${
+            isUncalibrated
+              ? 'border-amber-500/50 bg-[rgba(245,158,11,0.12)] text-amber-300'
+              : 'border-[var(--border-hairline)] bg-[rgba(11,15,26,0.6)] text-[var(--text-primary)]'
+          }`}
+          title={isUncalibrated ? 'Warning: Land-cover classifier checkpoint missing or uncalibrated' : 'All systems calibrated'}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isUncalibrated ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+            }`}
+          />
+          <span className="font-mono text-[10px] tracking-wider">
+            {isUncalibrated
+              ? 'SYSTEM READY · CLASSIFIER UNCALIBRATED'
+              : 'SYSTEM READY · ISRO / SAC'}
           </span>
         </div>
       </div>

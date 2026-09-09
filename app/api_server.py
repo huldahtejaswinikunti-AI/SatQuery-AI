@@ -110,15 +110,18 @@ class ExportPdfRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check() -> dict[str, Any]:
+    from satquery.classifiers.predict import get_calibration_status
+    calibration = get_calibration_status()
     return {
-        "status": "READY",
+        "status": "READY" if calibration == "calibrated" else "UNCALIBRATED",
+        "classifier_calibration": calibration,
         "system": "SatQuery AI Mission Control",
         "sponsor": "ISRO / SAC & SIH 2026",
         "active_models": [
             "GeoChat-7B + LoRA",
             "CLIPSeg Open-Vocabulary Grounding",
             "TinyCD Bi-Temporal Change Detection",
-            "ResNet-18 Land Cover Classifier",
+            f"ResNet-18 Land Cover Classifier ({calibration})",
             "Deterministic Spectral Indices (NDVI/NDWI/NDBI)",
             "SAR Polarimetric Backscatter Engine",
             "Chandrayaan-2 OHRC/TMC-2 Lunar Pipeline",

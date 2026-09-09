@@ -15,6 +15,13 @@ from satquery.perception.cloud_mask import (
     detect_cloud_mask,
     CloudMaskResult,
 )
+from satquery.perception.spectral_interpretation import (
+    interpret_ndvi,
+    interpret_ndwi,
+    interpret_ndbi,
+    describe_dominant_land_cover,
+    compute_four_way_composition,
+)
 
 __all__ = [
     "compute_indices",
@@ -28,4 +35,9 @@ __all__ = [
     "compute_cloud_mask",
     "detect_cloud_mask",
     "CloudMaskResult",
+    "interpret_ndvi",
+    "interpret_ndwi",
+    "interpret_ndbi",
+    "describe_dominant_land_cover",
+    "compute_four_way_composition",
 ]

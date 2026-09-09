@@ -12,7 +12,9 @@ import {
   Copy, 
   ChevronDown, 
   FileCode, 
-  Loader2 
+  Loader2,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 interface ReportPanelProps {
@@ -21,6 +23,8 @@ interface ReportPanelProps {
   item: ObservationItem | null;
   isLoading?: boolean;
   error?: string | null;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export const ReportPanel: React.FC<ReportPanelProps> = ({
@@ -29,6 +33,8 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
   item,
   isLoading = false,
   error = null,
+  isExpanded = false,
+  onToggleExpand,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
@@ -235,116 +241,149 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
   return (
     <div className="w-full h-full rounded border border-[var(--border-hairline)] bg-[var(--bg-panel)] p-6 space-y-6 overflow-y-auto max-h-[760px] transition-all">
       {/* Report Header: Title, Actions & Semantic Confidence Badge */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-hairline)] pb-4">
-        <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-[var(--accent-verified)]" />
-          <h3 className="font-serif text-base font-bold text-[var(--text-primary)]">
-            SCIENTIFIC ANALYSIS REPORT
-          </h3>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <ConfidenceBadge
-            domain={domain}
-            confidenceScore={confidenceScore}
-            isVerified={!isLunar}
-          />
-
-          {/* Quick Format Pills */}
-          <div className="flex items-center rounded border border-[var(--border-hairline)] bg-[var(--bg-panel-elevated)] p-0.5">
-            <button
-              onClick={handleDownloadPdf}
-              disabled={isPdfLoading}
-              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--accent-verified)] hover:bg-[rgba(77,184,255,0.15)] rounded transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1"
-              title="Download Executive PDF"
-            >
-              {isPdfLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : null}
-              <span>PDF</span>
-            </button>
-            <span className="text-[var(--border-hairline)]">|</span>
-            <button
-              onClick={handleDownloadMd}
-              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
-              title="Download Markdown Report"
-            >
-              MD
-            </button>
-            <span className="text-[var(--border-hairline)]">|</span>
-            <button
-              onClick={handleDownloadJson}
-              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
-              title="Download JSON Telemetry"
-            >
-              JSON
-            </button>
+      {/* Report Header: Two-tier layout for seamless fit without clipping */}
+      <div className="border-b border-[var(--border-hairline)] pb-4 space-y-3">
+        {/* Row 1: Title, Confidence Badge & Expand/Collapse */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-[var(--accent-verified)] flex-shrink-0" />
+            <h3 className="font-serif text-sm sm:text-base font-bold text-[var(--text-primary)] truncate tracking-wide">
+              SCIENTIFIC ANALYSIS REPORT
+            </h3>
           </div>
 
-          {/* Export Dropdown Menu Button */}
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded bg-[rgba(77,184,255,0.12)] hover:bg-[var(--accent-verified)] text-[var(--accent-verified)] hover:text-[var(--bg-void)] border border-[rgba(77,184,255,0.3)] transition-all text-[10px] font-mono font-bold tracking-wider cursor-pointer"
-              title="Export Report (PDF / MD / JSON)"
-            >
-              <Download className="w-3 h-3" />
-              <span>EXPORT</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ConfidenceBadge
+              domain={domain}
+              confidenceScore={confidenceScore}
+              isVerified={!isLunar}
+            />
 
-            {/* Dropdown Menu */}
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-1.5 w-52 rounded bg-[var(--bg-panel-elevated)] border border-[var(--border-hairline)] shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                <div className="px-3 py-1.5 border-b border-[var(--border-hairline)]">
-                  <span className="font-mono text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">
-                    Select Export Format
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleDownloadPdf}
-                  disabled={isPdfLoading}
-                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <FileText className="w-3.5 h-3.5 text-rose-400" />
-                  <div className="flex flex-col">
-                    <span className="font-semibold">PDF Document</span>
-                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.pdf (Executive Briefing)</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={handleDownloadMd}
-                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
-                  <div className="flex flex-col">
-                    <span className="font-semibold">Markdown Report</span>
-                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.md (Tables & Evidence)</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={handleDownloadJson}
-                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
-                >
-                  <FileCode className="w-3.5 h-3.5 text-amber-400" />
-                  <div className="flex flex-col">
-                    <span className="font-semibold">Structured Telemetry</span>
-                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.json (Trace & Metrics)</span>
-                  </div>
-                </button>
-              </div>
+            {onToggleExpand && (
+              <button
+                onClick={onToggleExpand}
+                className="p-1.5 rounded bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(77,184,255,0.15)] text-[var(--text-secondary)] hover:text-[var(--accent-verified)] border border-[var(--border-hairline)] transition-all cursor-pointer flex items-center gap-1 text-[10px] font-mono font-semibold"
+                title={isExpanded ? "Collapse to 50/50 view" : "Expand report section to wide view"}
+              >
+                {isExpanded ? (
+                  <>
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">COLLAPSE</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">EXPAND</span>
+                  </>
+                )}
+              </button>
             )}
           </div>
+        </div>
 
-          {/* Copy Report Button */}
-          <button
-            onClick={handleCopy}
-            className="p-1.5 rounded bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-            title="Copy Report to Clipboard"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
+        {/* Row 2: Action Toolbar (Quick Pills + Export Dropdown + Copy) */}
+        <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[rgba(255,255,255,0.04)] flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[9px] text-[var(--text-secondary)] uppercase tracking-wider hidden sm:inline">
+              FORMAT:
+            </span>
+            <div className="flex items-center rounded border border-[var(--border-hairline)] bg-[var(--bg-panel-elevated)] p-0.5">
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isPdfLoading}
+                className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--accent-verified)] hover:bg-[rgba(77,184,255,0.15)] rounded transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                title="Download Executive PDF"
+              >
+                {isPdfLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : null}
+                <span>PDF</span>
+              </button>
+              <span className="text-[var(--border-hairline)]">|</span>
+              <button
+                onClick={handleDownloadMd}
+                className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
+                title="Download Markdown Report"
+              >
+                MD
+              </button>
+              <span className="text-[var(--border-hairline)]">|</span>
+              <button
+                onClick={handleDownloadJson}
+                className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
+                title="Download JSON Telemetry"
+              >
+                JSON
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Export Dropdown Menu Button */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded bg-[rgba(77,184,255,0.12)] hover:bg-[var(--accent-verified)] text-[var(--accent-verified)] hover:text-[var(--bg-void)] border border-[rgba(77,184,255,0.3)] transition-all text-[10px] font-mono font-bold tracking-wider cursor-pointer"
+                title="Export Report (PDF / MD / JSON)"
+              >
+                <Download className="w-3 h-3" />
+                <span>EXPORT</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-52 rounded bg-[var(--bg-panel-elevated)] border border-[var(--border-hairline)] shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-3 py-1.5 border-b border-[var(--border-hairline)]">
+                    <span className="font-mono text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">
+                      Select Export Format
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={isPdfLoading}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-rose-400" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">PDF Document</span>
+                      <span className="text-[10px] text-[var(--text-secondary)] font-mono">.pdf (Executive Briefing)</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadMd}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">Markdown Report</span>
+                      <span className="text-[10px] text-[var(--text-secondary)] font-mono">.md (Tables & Evidence)</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadJson}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">Structured Telemetry</span>
+                      <span className="text-[10px] text-[var(--text-secondary)] font-mono">.json (Trace & Metrics)</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Copy Report Button */}
+            <button
+              onClick={handleCopy}
+              className="p-1.5 rounded bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              title="Copy Report to Clipboard"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
       </div>
 

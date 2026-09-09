@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Scenario, AnalysisResult, ObservationDomain } from '../../types';
 import { ScenarioList } from './ScenarioList';
 import { ImageViewer } from './ImageViewer';
 import { QueryConsole } from './QueryConsole';
 import { ReportPanel } from './ReportPanel';
 import { SectionDivider } from '../layout/SectionDivider';
+import { Columns, Maximize2, Split } from 'lucide-react';
 
 interface ObservationDeckProps {
   domain: ObservationDomain;
@@ -21,6 +22,8 @@ interface ObservationDeckProps {
   error: string | null;
 }
 
+export type WorkspaceLayout = 'balanced' | 'expanded-report' | 'expanded-viewer';
+
 export const ObservationDeck: React.FC<ObservationDeckProps> = ({
   domain,
   scenarios,
@@ -35,11 +38,17 @@ export const ObservationDeck: React.FC<ObservationDeckProps> = ({
   result,
   error,
 }) => {
+  const [layoutMode, setLayoutMode] = useState<WorkspaceLayout>('balanced');
   const currentScenario = scenarios[selectedScenarioIdx] || null;
   const currentItem = currentScenario?.sample_items?.[selectedItemIdx] || null;
 
+  // Toggle report expansion
+  const toggleReportExpand = () => {
+    setLayoutMode((prev) => (prev === 'expanded-report' ? 'balanced' : 'expanded-report'));
+  };
+
   return (
-    <section id="observation-workspace" className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    <section id="observation-workspace" className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Workspace Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -54,8 +63,51 @@ export const ObservationDeck: React.FC<ObservationDeckProps> = ({
           </h2>
         </div>
 
-        <div className="font-mono text-xs text-[var(--text-secondary)]">
-          WORKSPACE RATIO: <span className="text-[var(--text-primary)] font-bold">55% VISUAL / 45% TELEMETRY</span>
+        {/* Dynamic Workspace Layout Selector */}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-[var(--text-secondary)] uppercase tracking-wider hidden sm:inline">
+            LAYOUT RATIO:
+          </span>
+          <div className="flex items-center rounded border border-[var(--border-hairline)] bg-[var(--bg-panel-elevated)] p-1 gap-1">
+            <button
+              onClick={() => setLayoutMode('balanced')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                layoutMode === 'balanced'
+                  ? 'bg-[var(--accent-verified)] text-[var(--bg-void)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+              title="Balanced 50/50 split"
+            >
+              <Split className="w-3 h-3" />
+              <span>50 / 50</span>
+            </button>
+
+            <button
+              onClick={() => setLayoutMode('expanded-report')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                layoutMode === 'expanded-report'
+                  ? 'bg-[var(--accent-verified)] text-[var(--bg-void)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+              title="Expand report to 65% width"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span>WIDE REPORT</span>
+            </button>
+
+            <button
+              onClick={() => setLayoutMode('expanded-viewer')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                layoutMode === 'expanded-viewer'
+                  ? 'bg-[var(--accent-verified)] text-[var(--bg-void)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+              title="Expand raster viewer to 65% width"
+            >
+              <Columns className="w-3 h-3" />
+              <span>WIDE VIEWER</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -71,10 +123,18 @@ export const ObservationDeck: React.FC<ObservationDeckProps> = ({
 
       <SectionDivider label="ACTIVE OBSERVATION & SCIENTIFIC TELEMETRY" />
 
-      {/* 2. Balanced 55/45 Side-by-Side Mission Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (55% Visual: Viewer + Query Console) */}
-        <div className="lg:col-span-7 space-y-4">
+      {/* 2. Responsive Flexible Mission Workspace Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start transition-all duration-300">
+        {/* Left Column (Visual: Viewer + Query Console) */}
+        <div
+          className={`space-y-4 transition-all duration-300 ${
+            layoutMode === 'expanded-report'
+              ? 'lg:col-span-5'
+              : layoutMode === 'expanded-viewer'
+              ? 'lg:col-span-7'
+              : 'lg:col-span-6'
+          }`}
+        >
           <ImageViewer
             domain={domain}
             item={currentItem}
@@ -91,14 +151,24 @@ export const ObservationDeck: React.FC<ObservationDeckProps> = ({
           />
         </div>
 
-        {/* Right Column (45% Information: Structured Scientific Analysis Report) */}
-        <div className="lg:col-span-5 h-full">
+        {/* Right Column (Information: Structured Scientific Analysis Report) */}
+        <div
+          className={`h-full transition-all duration-300 ${
+            layoutMode === 'expanded-report'
+              ? 'lg:col-span-7'
+              : layoutMode === 'expanded-viewer'
+              ? 'lg:col-span-5'
+              : 'lg:col-span-6'
+          }`}
+        >
           <ReportPanel
             domain={domain}
             result={result}
             item={currentItem}
             isLoading={isLoading}
             error={error}
+            isExpanded={layoutMode === 'expanded-report'}
+            onToggleExpand={toggleReportExpand}
           />
         </div>
       </div>

@@ -56,34 +56,23 @@ def generate_report(
         lines.append("| Index | Value | Interpretation |")
         lines.append("|-------|-------|----------------|")
 
+        from satquery.perception.spectral_interpretation import (
+            interpret_ndvi,
+            interpret_ndwi,
+            interpret_ndbi,
+        )
+
         ndvi = spectral.get("ndvi_mean", 0)
         ndwi = spectral.get("ndwi_mean", 0)
         ndbi = spectral.get("ndbi_mean", 0)
 
-        if ndvi > 0.4:
-            ndvi_interp = "Dense, healthy vegetation"
-        elif ndvi > 0.2:
-            ndvi_interp = "Moderate vegetation coverage"
-        elif ndvi > 0.1:
-            ndvi_interp = "Sparse vegetation"
-        else:
-            ndvi_interp = "Bare soil / non-vegetated"
+        ndvi_interp = interpret_ndvi(ndvi)
         lines.append(f"| **NDVI** (Vegetation) | `{ndvi:+.4f}` | {ndvi_interp} |")
 
-        if ndwi > 0.2:
-            ndwi_interp = "Open water body"
-        elif ndwi > 0.0:
-            ndwi_interp = "Wet surface / partial water"
-        else:
-            ndwi_interp = "Dry land surface"
+        ndwi_interp = interpret_ndwi(ndwi)
         lines.append(f"| **NDWI** (Water) | `{ndwi:+.4f}` | {ndwi_interp} |")
 
-        if ndbi > 0.1:
-            ndbi_interp = "Built-up / urban area"
-        elif ndbi > 0.0:
-            ndbi_interp = "Mixed built-up and natural"
-        else:
-            ndbi_interp = "Natural land cover"
+        ndbi_interp = interpret_ndbi(ndbi)
         lines.append(f"| **NDBI** (Built-up) | `{ndbi:+.4f}` | {ndbi_interp} |")
         lines.append("")
 
@@ -106,14 +95,27 @@ def generate_report(
     if top_k:
         lines.append("## Land Cover Classification")
         lines.append("")
-        lines.append("Multi-label classification via fine-tuned ResNet-18 on BigEarthNet-S2:")
-        lines.append("")
-        lines.append("| Rank | Land Cover Class | Probability |")
-        lines.append("|------|------------------|-------------|")
-        for i, entry in enumerate(top_k, 1):
-            prob_pct = entry.get("probability", 0) * 100
-            lines.append(f"| {i} | {entry.get('class_name', 'Unknown')} | {prob_pct:.1f}% |")
-        lines.append("")
+        calib = vf.get("model_calibration") or trace.get("model_calibration")
+        if calib == "untrained_fallback":
+            lines.append("> [!WARNING]")
+            lines.append("> **WARNING: CLASSIFIER UNCALIBRATED (UNTRAINED FALLBACK HEAD)**")
+            lines.append("> Checkpoint `models/land_cover/best_model.pt` was not detected. Predictions are running on an untrained, randomly-initialized sigmoid head on an ImageNet backbone. Values below are uncalibrated artifacts and MUST NOT be used for operational decision-making.")
+            lines.append("")
+            lines.append("| Rank | Land Cover Class | Status | Raw Score |")
+            lines.append("|------|------------------|--------|-----------|")
+            for i, entry in enumerate(top_k, 1):
+                prob_pct = entry.get("probability", 0) * 100
+                lines.append(f"| {i} | {entry.get('class_name', 'Unknown')} | ⚠️ UNCALIBRATED | {prob_pct:.1f}% (Untrained Head) |")
+            lines.append("")
+        else:
+            lines.append("Multi-label classification via fine-tuned ResNet-18 on BigEarthNet-S2:")
+            lines.append("")
+            lines.append("| Rank | Land Cover Class | Probability |")
+            lines.append("|------|------------------|-------------|")
+            for i, entry in enumerate(top_k, 1):
+                prob_pct = entry.get("probability", 0) * 100
+                lines.append(f"| {i} | {entry.get('class_name', 'Unknown')} | {prob_pct:.1f}% |")
+            lines.append("")
 
     conf_tag = vf.get("confidence_tag", "")
     reason = vf.get("reason", "")
