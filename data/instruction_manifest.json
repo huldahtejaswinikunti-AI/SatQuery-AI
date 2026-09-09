@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0.0",
+  "project": "SatQuery AI Instruction Dataset",
+  "problem_statement": "SIH 2026 PS 26167 (ISRO/SAC)",
+  "description": "Unified Remote Sensing and Lunar Multimodal Instruction Dataset Schema: QUERY -> TASK IDENTIFICATION -> EVIDENCE -> ANSWER",
+  "samples": [
+    {
+      "task": "single_image_vqa",
+      "image": "data/demo_samples/single_optical/sample_coastal_port.png",
+      "instruction": "What land-cover types and maritime infrastructure are visible in this scene?",
+      "answer": "The scene contains an active coastal port facility, breakwater structures, adjacent commercial warehouses, and peripheral vegetation.",
+      "evidence": {
+        "regions": [
+          {"bbox": [12, 140, 180, 240], "label": "coastal_berths"},
+          {"bbox": [20, 20, 110, 95], "label": "port_facility"}
+        ],
+        "classes": [
+          "coastal_port",
+          "maritime_berths",
+          "water_body",
+          "vegetation"
+        ]
+      },
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "BigEarthNet-v2.0 / VRSBench",
+      "split": "train"
+    },
+    {
+      "task": "captioning",
+      "image": "data/demo_samples/single_optical/sample_urban_grounding.png",
+      "instruction": "Describe the scene in remote-sensing terms.",
+      "answer": "The image displays a high-density logistics park consisting of large industrial warehouses, paved freight yards, and multi-lane arterial road networks adjacent to suburban woodland.",
+      "evidence": {
+        "classes": ["industrial_logistics", "impervious_surface", "woodland"]
+      },
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "VRSBench",
+      "split": "train"
+    },
+    {
+      "task": "grounding",
+      "image": "data/demo_samples/single_optical/sample_urban_grounding.png",
+      "instruction": "Highlight the large industrial warehouse and any parking lots.",
+      "answer": "The primary warehouse structure is located in the western sector with accompanying paved loading aprons extending eastward.",
+      "bbox": [45, 60, 190, 210],
+      "mask": "masks/grounding_industrial_001.png",
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "VRSBench",
+      "split": "train"
+    },
+    {
+      "task": "change_vqa",
+      "image_t1": "data/demo_samples/bitemporal_pairs/sample_levir_pre.png",
+      "image_t2": "data/demo_samples/bitemporal_pairs/sample_levir_post.png",
+      "instruction": "What changed between the two observations?",
+      "answer": "Significant new residential and industrial construction has encroached upon the central clearing, with newly paved asphalt access lanes and raised building foundations.",
+      "evidence": {
+        "change_detected": true,
+        "change_direction": "north-east sector",
+        "approximate_change_percent": 14.8
+      },
+      "change_mask": "masks/levir_change_mask_001.png",
+      "sensor": "VHR Google Earth / Cartosat-equivalent",
+      "source_dataset": "LEVIR-CD / CDVQA",
+      "split": "train"
+    },
+    {
+      "task": "optical_sar_fusion",
+      "optical": "data/demo_samples/optical_sar_pairs/sample_monsoon_cloudy.png",
+      "sar": "data/demo_samples/optical_sar_pairs/sample_sar_vv_vh.png",
+      "instruction": "Using both optical and SAR imagery, identify flooded areas despite cloud contamination.",
+      "answer": "The optical observation is obscured by dense monsoon cloud cover; however, Sentinel-1 C-SAR backscatter reveals strong specular radar reflection (low backscatter below -18 dB) delineating inundated floodwaters in the southern floodway.",
+      "evidence": {
+        "optical_signal": "cloud overcast and atmospheric haze",
+        "sar_signal": "specular water scattering (VV: -21.4 dB, VH: -27.1 dB)",
+        "fused_consensus": "94% flood delineation confidence"
+      },
+      "source_dataset": "SEN12MS-CR",
+      "split": "train"
+    },
+    {
+      "task": "land_cover",
+      "image": "data/demo_samples/single_optical/sample_agri_fields.png",
+      "instruction": "Classify the major land-cover types.",
+      "answer": "The dominant classes are irrigated agricultural croplands and demarcated parcel fields with hedgerow vegetation borders.",
+      "labels": [
+        "agriculture",
+        "arable_land",
+        "sparse_vegetation"
+      ],
+      "sensor": "Sentinel-2A MSI",
+      "source_dataset": "BigEarthNet-v2.0",
+      "split": "train"
+    },
+    {
+      "task": "lunar_vqa",
+      "image": "data/demo_samples/lunar/ch2_ohrc_crater_boguslawsky.png",
+      "instruction": "Identify prominent impact craters and describe their morphology.",
+      "answer": "A large degraded impact structure is visible featuring a prominent raised circular rim, terraced inner wall slope scarps, and a crater floor excavated with secondary micro-impacts.",
+      "evidence": {
+        "features": [
+          "impact_crater",
+          "raised_rim",
+          "terraced_inner_wall",
+          "crater_floor_fill"
+        ],
+        "estimated_diameter_km": 1.8
+      },
+      "mission": "Chandrayaan-2",
+      "sensor": "OHRC",
+      "source_dataset": "ISRO ISSDC PRADAN Chandrayaan-2",
+      "split": "train"
+    },
+    {
+      "task": "lunar_grounding",
+      "image": "data/demo_samples/lunar/ch2_lroc_tycho_central_peak.png",
+      "instruction": "Highlight the largest visible central peak summit and adjacent boulder fields.",
+      "answer": "The central uplift bedrock peak rises sharply in the upper-central quadrant, surrounded by high-reflectance fractured boulders exceeding 2 meters in width.",
+      "bbox": [55, 65, 185, 205],
+      "mission": "Lunar Reconnaissance Orbiter (LRO)",
+      "sensor": "LROC NAC",
+      "source_dataset": "NASA PDS Geosciences / LUCID",
+      "split": "train"
+    },
+    {
+      "task": "lunar_comparison",
+      "image_t1": "data/demo_samples/lunar/ch2_ohrc_shackleton_rim_psr.png",
+      "image_t2": "data/demo_samples/lunar/ch2_lroc_peary_polar_crater.png",
+      "instruction": "Compare the illumination and topography visible in these two polar observations.",
+      "answer": "Both observations depict high-latitude lunar polar terrain subject to grazing solar angles. The Shackleton rim shows an abrupt high-contrast boundary bordering a deep volatile cold trap, whereas Peary crater exhibits broader, undulating rim topography with a diffuse shadowed floor.",
+      "evidence": {
+        "illumination_angle_t1": "1.2° elevation",
+        "illumination_angle_t2": "1.5° elevation",
+        "polar_zone": "South Pole vs North Pole"
+      },
+      "source_dataset": "Moonstone Multimodal Benchmark",
+      "split": "train"
+    }
+  ]
+}

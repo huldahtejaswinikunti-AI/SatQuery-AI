@@ -1,12 +1,14 @@
 {
   "_comment_mandatory_issdc_acknowledgment": "The research is based partially / to a significant extent on the results obtained from the Chandrayaan-II, second lunar mission of ISRO, archived at the Indian Space Science Data Centre (ISSDC).",
-  "mission": "Chandrayaan-2",
+  "mission": "Chandrayaan-2 & NASA Lunar Reconnaissance Orbiter (LRO)",
   "target_body": "Moon",
   "instrument_suite": [
     "OHRC (Orbiter High Resolution Camera)",
-    "TMC-2 (Terrain Mapping Camera 2)"
+    "TMC-2 (Terrain Mapping Camera 2)",
+    "LROC NAC (Narrow Angle Camera)",
+    "LROC WAC (Wide Angle Camera)"
   ],
-  "provenance": "ISRO / ISSDC PRADAN (pradan.issdc.gov.in)",
+  "provenance": "ISRO / ISSDC PRADAN & NASA Planetary Data System (PDS)",
   "samples": [
     {
       "id": "lunar_01_crater_boguslawsky",
@@ -16,6 +18,7 @@
       "resolution": "0.25 m/pixel",
       "feature_type": "Impact Crater & Terraced Slopes",
       "coordinates": "72.9° S, 43.3° E",
+      "provenance": "ISRO / ISSDC PRADAN",
       "description": "Sub-meter high-resolution orbital observation showing impact crater rim, terraced walls, and localized micro-craters."
     },
     {
@@ -26,6 +29,7 @@
       "resolution": "0.32 m/pixel",
       "feature_type": "Permanently Shadowed Region & Cold Trap",
       "coordinates": "89.9° S, 0.0° E",
+      "provenance": "ISRO / ISSDC PRADAN",
       "description": "High-contrast polar observation showing sunlit peaks adjacent to deep permanently shadowed regions (PSRs) potential volatile cold-traps."
     },
     {
@@ -36,7 +40,85 @@
       "resolution": "5.0 m/pixel",
       "feature_type": "Regolith Texture & Impact Ejecta",
       "coordinates": "18.5° N, 55.2° E",
+      "provenance": "ISRO / ISSDC PRADAN",
       "description": "Terrain Mapping Camera-2 stereo observation displaying immature high-albedo ejecta ray blankets over basaltic mare regolith."
+    },
+    {
+      "id": "lunar_04_tycho_central_peak",
+      "file": "ch2_lroc_tycho_central_peak.png",
+      "label": "Tycho Crater Central Peak & Boulders",
+      "instrument": "LROC NAC",
+      "resolution": "0.50 m/pixel",
+      "feature_type": "Central Uplift Peak & Impact Melt",
+      "coordinates": "43.3° S, 11.2° W",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "High-resolution orbital observation of the central peak complex of Tycho Crater, exhibiting massive boulder fields and impact melt flows."
+    },
+    {
+      "id": "lunar_05_burg_terraced_wall",
+      "file": "ch2_lroc_burg_terraced_wall.png",
+      "label": "Bürg Crater Terraced Wall Slopes",
+      "instrument": "LROC NAC",
+      "resolution": "0.45 m/pixel",
+      "feature_type": "Crater Wall Terracing & Talus Slopes",
+      "coordinates": "45.0° N, 28.2° E",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Steep terraced scarps and granular mass-wasting on the inner rim walls of complex impact crater Bürg."
+    },
+    {
+      "id": "lunar_06_bright_crater_rays",
+      "file": "ch2_lroc_bright_crater_rays.png",
+      "label": "Fresh Impact Crater with Radial High-Albedo Rays",
+      "instrument": "LROC NAC",
+      "resolution": "0.40 m/pixel",
+      "feature_type": "Immature Impact Crater & Radial Ejecta",
+      "coordinates": "12.6° S, 148.9° E",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Morphologically pristine young impact crater showing asymmetric continuous ejecta blanket and high-reflectance optical rays."
+    },
+    {
+      "id": "lunar_07_peary_polar_crater",
+      "file": "ch2_lroc_peary_polar_crater.png",
+      "label": "Peary Polar Crater Permanent Shadow & Illumination",
+      "instrument": "LROC WAC",
+      "resolution": "1.50 m/pixel",
+      "feature_type": "Lunar North Pole Cold Trap",
+      "coordinates": "88.6° N, 33.0° E",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Extreme low-angle solar illumination revealing permanent shadowed floors and adjacent quasi-permanently illuminated crater rim peaks."
+    },
+    {
+      "id": "lunar_08_bullialdus_peak",
+      "file": "ch2_lroc_bullialdus_peak.png",
+      "label": "Bullialdus Crater Central Mountain Complex",
+      "instrument": "LROC NAC",
+      "resolution": "0.60 m/pixel",
+      "feature_type": "Exhumed Anorthositic Crustal Uplift",
+      "coordinates": "20.7° S, 22.2° W",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Deep-seated crustal bedrock excavated from lunar highlands and exposed along the central peak summit of Bullialdus Crater."
+    },
+    {
+      "id": "lunar_09_copernicus_wac_rays",
+      "file": "ch2_lroc_copernicus_wac_rays.png",
+      "label": "Copernicus Basin Multispectral Ray System",
+      "instrument": "LROC WAC Multispectral",
+      "resolution": "4.0 m/pixel",
+      "feature_type": "Multispectral Basaltic Ray System",
+      "coordinates": "9.62° N, 20.08° W",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Calibrated 7-band multispectral composite displaying extensive titanium and iron composition across the ejecta blanket of Copernicus."
+    },
+    {
+      "id": "lunar_10_highlands_terrain",
+      "file": "ch2_lroc_highlands_terrain.png",
+      "label": "Ancient Heavily Cratered Lunar Highlands",
+      "instrument": "LROC WAC",
+      "resolution": "2.0 m/pixel",
+      "feature_type": "Saturated Regolith & Secondary Impact Craters",
+      "coordinates": "54.1° S, 16.4° E",
+      "provenance": "NASA LROC / PDS Geosciences",
+      "description": "Highland terrain saturated with millions of years of overlapping impacts, illustrating space weathering and fine-grained regolith cover."
     }
   ]
 }

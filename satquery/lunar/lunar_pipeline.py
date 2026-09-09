@@ -93,6 +93,44 @@ def _generate_lunar_overlay(arr: np.ndarray, features: dict[str, Any], query: st
     return Image.fromarray(blended)
 
 
+# Incompatible Earth-observation keywords that trigger Lunar Domain Guard
+_EARTH_SPECIFIC_TERMS: dict[str, str] = {
+    "building": "Building detection",
+    "buildings": "Building detection",
+    "house": "Built-up structure detection",
+    "houses": "Built-up structure detection",
+    "road": "Road network extraction",
+    "roads": "Road network extraction",
+    "highway": "Road network extraction",
+    "vegetation": "Vegetation and biomass analysis",
+    "crop": "Agricultural crop analysis",
+    "crops": "Agricultural crop analysis",
+    "forest": "Forest canopy assessment",
+    "tree": "Tree and forest analysis",
+    "trees": "Tree and forest analysis",
+    "car": "Vehicle detection",
+    "cars": "Vehicle detection",
+    "vehicle": "Vehicle detection",
+    "vehicles": "Vehicle detection",
+    "ship": "Maritime vessel detection",
+    "ships": "Maritime vessel detection",
+    "boat": "Maritime vessel detection",
+    "harbor": "Harbor and port infrastructure analysis",
+    "airport": "Airport runway detection",
+    "city": "Urban city infrastructure analysis",
+    "urban": "Urban land-cover analysis",
+}
+
+
+def _check_earth_domain_mismatch(query: str) -> str | None:
+    """Check if query is asking for Earth-specific features that do not exist on the Moon."""
+    q_words = set(query.lower().replace("?", " ").replace(".", " ").replace(",", " ").split())
+    for kw, feature_label in _EARTH_SPECIFIC_TERMS.items():
+        if kw in q_words:
+            return feature_label
+    return None
+
+
 def _generate_lunar_answer(query: str, features: dict[str, Any]) -> str:
     """Synthesize fact-grounded zero-shot lunar analysis answer."""
     q = query.lower()
@@ -113,6 +151,12 @@ def _generate_lunar_answer(query: str, features: dict[str, Any]) -> str:
             f"(mean optical reflectance: {features['mean_reflectance']}/255). These pockets represent potential "
             f"cold-trap regions sheltered from direct solar illumination. Surrounding rim terrain exhibits sharp topographical "
             f"contrast with roughness score of {roughness:.1f}."
+        )
+    elif any(w in q for w in ("boulder", "boulders", "rock", "rocks", "block")):
+        return (
+            f"Boulder and block distribution assessment: High-contrast morphological anomalies indicate localized "
+            f"rock populations clustered along crater rims and ejecta blanket fringes. Surface micro-relief "
+            f"roughness is measured at {roughness:.1f}, with {e_pct}% high-albedo fragmented material."
         )
     elif any(w in q for w in ("regolith", "texture", "soil", "dust", "grain")):
         return (
@@ -136,7 +180,9 @@ def run_lunar_pipeline(
     """Execute the Lunar Analysis pipeline.
 
     Follows contract:
+    - Domain Guard: Intercepts Earth-only queries with scientific explanation
     - Skips Earth cross_verification
+    - Deterministic measurements vs Model interpretation separation
     - Returns confidence_tag: 'experimental_unverified'
     - Includes audit trace and report markdown
     """
@@ -157,12 +203,101 @@ def run_lunar_pipeline(
         }
 
     arr = images[0]
+
+    # Check Lunar Domain Guard
+    earth_mismatch = _check_earth_domain_mismatch(query)
+    if earth_mismatch:
+        rejection_msg = (
+            f"Lunar mode is active. {earth_mismatch} is disabled because this scene is being analyzed "
+            "as lunar terrain. Available analyses include craters, boulders, shadows, ejecta patterns, "
+            "and surface morphology."
+        )
+        elapsed = round(time.time() - t0, 3)
+        ts = datetime.now(timezone.utc).isoformat()
+        # Create base overlay
+        rgb_base = arr if arr.ndim == 3 else np.stack([arr, arr, arr], axis=-1)
+        if rgb_base.max() <= 1.0:
+            rgb_base = (rgb_base * 255).astype(np.uint8)
+        else:
+            rgb_base = rgb_base.astype(np.uint8)
+
+        trace = {
+            "task": "lunar_vqa_zero_shot",
+            "tools_invoked": [
+                "lunar_input_validator",
+                "lunar_domain_guard",
+                "cross_verification_skipped",
+            ],
+            "parameters": {
+                "query": query,
+                "domain": "lunar",
+                "domain_guard": "earth_keyword_intercepted",
+                "intercepted_feature": earth_mismatch,
+            },
+            "confidence": "experimental_unverified",
+            "execution_time_seconds": elapsed,
+            "timestamp": ts,
+        }
+
+        report_md = f"""# SatQuery AI — Chandrayaan-2 Lunar Domain Notice
+
+**Target Body:** Moon  
+**Timestamp:** {ts}  
+**Status:** `Domain Mismatch Intercepted`
+
+---
+
+## Domain Guard Resolution
+{rejection_msg}
+
+## Available Lunar Capabilities
+- **Crater Detection & Rim Analysis**
+- **Boulder & Rock Population Mapping**
+- **Shadowed / Permanently Shadowed Region (PSR) Detection**
+- **Ejecta Blanket & Albedo Mapping**
+- **Regolith Texture & Micro-Relief Roughness**
+"""
+        return {
+            "answer": rejection_msg,
+            "overlay": Image.fromarray(rgb_base),
+            "confidence": "experimental_unverified",
+            "confidence_tag": "experimental_unverified",
+            "confidence_score": None,
+            "trace": trace,
+            "report_path": None,
+            "report_markdown": report_md,
+            "verified_facts": {
+                "confidence_tag": "experimental_unverified",
+                "domain_guard_status": "rejected",
+                "intercepted_feature": earth_mismatch,
+                "measurements": {
+                    "diameter": "Unavailable (Domain mismatch query)",
+                    "scale_status": "unverified",
+                },
+                "details": {
+                    "cross_verification": "skipped",
+                },
+            },
+            "validation_failure_reason": None,
+        }
+
     features = _extract_lunar_features(arr)
     answer = _generate_lunar_answer(query, features)
     overlay = _generate_lunar_overlay(arr, features, query)
 
     elapsed = round(time.time() - t0, 3)
     ts = datetime.now(timezone.utc).isoformat()
+
+    # Scale metadata check for scientific measurement honesty
+    m_info = metas[0] if metas else {}
+    res_val = m_info.get("resolution_m_per_pixel") or m_info.get("resolution_m") or m_info.get("resolution")
+    has_calibrated_scale = res_val is not None and isinstance(res_val, (int, float))
+
+    diameter_status = (
+        f"Calibrated scale: {res_val} m/px. Metric crater diameter measurement requires fitted rim geometry / DEM."
+        if has_calibrated_scale
+        else "Measurement unavailable — No calibrated geometric scale metadata available for pixel-to-meter conversion."
+    )
 
     # Trace explicitly indicates cross_verification was skipped
     trace = {
@@ -186,35 +321,46 @@ def run_lunar_pipeline(
 
     report_md = f"""# SatQuery AI — Chandrayaan-2 Lunar Analysis Report
 
-**Mission/Sensor:** Chandrayaan-2 OHRC / TMC-2  
-**Target Body:** Moon  
-**Generated:** {ts}  
+**Mission / Sensor:** Chandrayaan-2 OHRC / TMC-2  
+**Target Body:** Moon (Lunar Surface)  
+**Timestamp:** {ts}  
 **Confidence Status:** `experimental_unverified` (No Earth-observation cross-check available)
 
 ---
 
-## Executive Summary
+## 1. Executive Summary
 {answer}
 
 ---
 
-## Lunar Physical Morphological Metrics
-| Parameter | Value | Interpretation |
-|---|---|---|
-| **Shadow Fraction (PSR proxy)** | {features['shadow_percentage']}% | Deeply occluded cold-trap candidate regions |
-| **High-Albedo Ejecta Coverage** | {features['ejecta_percentage']}% | Fresh impact material / immature regolith |
-| **Surface Roughness Index** | {features['surface_roughness']} | Topographic slope and micro-relief variance |
-| **Mean Reflectance** | {features['mean_reflectance']} / 255 | Overall surface optical reflectance |
-
-> **System Notice:** Lunar imagery has no deterministic Earth cross-check (NDVI/NDWI/SAR) available in this system — treat this answer as unverified.
+## 2. Observed Morphological Features
+- **Circular Depressions & Rim Terraces:** High-gradient rim ridges with density {features['crater_rim_density']*100:.2f}%
+- **Albedo & Regolith Reflectance:** Mean reflectance {features['mean_reflectance']}/255
+- **Illumination & Shadowed Pockets:** {features['shadow_percentage']}% deeply occluded terrain (PSR candidate proxy)
+- **Ejecta Deposit Coverage:** {features['ejecta_percentage']}% high-albedo fragmented material
 
 ---
 
-## Execution Audit Trail
-- **Task:** `lunar_vqa_zero_shot`
-- **Specialist:** Zero-shot Lunar Morphology Specialist (Chandrayaan-2)
-- **Cross-Verification:** Explicitly skipped per design contract
-- **Duration:** {elapsed}s
+## 3. Measurements
+| Measurement Type | Value | Verification Status | Basis |
+|---|---|---|---|
+| **Crater Diameter** | {diameter_status} | `Unverified model estimate` | Calibrated scale / rim geometry required |
+| **Shadow Fraction** | {features['shadow_percentage']}% | `Deterministic pixel measurement` | Pixel intensity threshold (<20/255) |
+| **Ejecta Coverage** | {features['ejecta_percentage']}% | `Deterministic pixel measurement` | High-reflectance thresholding |
+| **Surface Roughness Index** | {features['surface_roughness']} | `Deterministic gradient calculation` | Spatial gradient magnitude variance |
+
+---
+
+## 4. Model Interpretation vs. Deterministic Verification
+- **Vision-Language Interpretation:** Qualitative identification of crater rims, geological age, and ejecta blanket patterns.
+- **Deterministic Measurement:** Direct raster statistics (reflectance histogram, gradient magnitude, occlusion mask).
+- **Independent Cross-Check:** ✕ None available (Earth spectral indices NDVI/NDWI/SAR are physically inapplicable to lunar regolith).
+
+---
+
+## 5. Provenance & Scientific Limitations
+- **Data Source:** ISRO / ISSDC Chandrayaan-2 PRADAN Archive (OHRC / TMC-2)
+- **Scientific Caveat:** Lunar morphological metrics are unverified approximations. Precision metric measurements require calibrated PDS4 labels and stereo DEM photogrammetry.
 """
 
     return {
@@ -230,6 +376,13 @@ def run_lunar_pipeline(
             "confidence_tag": "experimental_unverified",
             "reason": "Lunar imagery has no deterministic cross-check available in this system — treat this answer as unverified.",
             "agreed": False,
+            "measurements": {
+                "diameter": diameter_status,
+                "shadow_percentage": features["shadow_percentage"],
+                "ejecta_percentage": features["ejecta_percentage"],
+                "surface_roughness": features["surface_roughness"],
+                "scale_status": "calibrated" if has_calibrated_scale else "uncalibrated",
+            },
             "details": {
                 "shadow_percentage": features["shadow_percentage"],
                 "ejecta_percentage": features["ejecta_percentage"],
@@ -239,3 +392,4 @@ def run_lunar_pipeline(
         },
         "validation_failure_reason": None,
     }
+

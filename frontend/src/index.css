@@ -1,0 +1,72 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/700.css";
+@import "@fontsource/fraunces/800.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  
+  --color-bg-void: var(--bg-void);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-panel-elevated: var(--bg-panel-elevated);
+  --color-border-hairline: var(--border-hairline);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent-verified: var(--accent-verified);
+  --color-accent-experimental: var(--accent-experimental);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-void);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-serif);
+  }
+
+  .font-telemetry, code, pre, .telemetry-val {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Hairline border utility */
+.border-hairline {
+  border-color: var(--border-hairline);
+}
+
+/* Elevate frame background to prevent white box flashing */
+.panel-elevated {
+  background-color: var(--bg-panel-elevated);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(77, 184, 255, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(77, 184, 255, 0.45);
+}

@@ -1,0 +1,21 @@
+:root {
+  /* backgrounds */
+  --bg-void: #05070d;           /* deepest background, behind the starfield */
+  --bg-panel: #0b0f1a;          /* observation deck, report, scenario list */
+  --bg-panel-elevated: #121a2e; /* image viewer frame — never white while loading */
+
+  /* structure */
+  --border-hairline: rgba(255, 255, 255, 0.08);
+
+  /* text */
+  --text-primary: #edeff5;
+  --text-secondary: #9aa3b8;
+
+  /* accent — reserved for interactive state only: active tab, selected image, run button,
+     hero atmosphere glow. Do not introduce a second general-purpose accent. */
+  --accent-verified: #4db8ff;
+
+  /* semantic exception — used ONLY on the lunar confidence badge, never as a general
+     accent or decoration elsewhere. This is a status color, not a brand color. */
+  --accent-experimental: #f5a623;
+}

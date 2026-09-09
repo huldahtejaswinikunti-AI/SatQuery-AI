@@ -5,7 +5,68 @@
     "query": "Describe the land use and coastal infrastructure in this scene.",
     "input_mode": "single",
     "sample_files": [
-      "single_optical/sample_coastal_port.png"
+      "single_optical/sample_coastal_port.png",
+      "single_optical/sample_landsat_istanbul_bosphorus.png",
+      "single_optical/sample_port_complex.png",
+      "single_optical/sample_forest_boundary.png",
+      "single_optical/sample_agri_fields.png"
+    ],
+    "sample_items": [
+      {
+        "id": "coastal_port_s2",
+        "file": "single_optical/sample_coastal_port.png",
+        "name": "Mediterranean Coastal Infrastructure",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Zone 31T, Mediterranean Coast",
+        "query": "Describe the land use and coastal infrastructure in this scene.",
+        "provenance": "Copernicus Sentinel-2 Level-2A"
+      },
+      {
+        "id": "landsat_istanbul_strait",
+        "file": "single_optical/sample_landsat_istanbul_bosphorus.png",
+        "name": "Istanbul Bosphorus Strait & Harbor",
+        "sensor": "Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "2000-06-15",
+        "location": "Bosphorus Strait, Istanbul",
+        "query": "Analyze the maritime shipping channel, urban density, and surrounding forest reserves.",
+        "provenance": "NASA / USGS Landsat Science Archive"
+      },
+      {
+        "id": "port_complex_pan",
+        "file": "single_optical/sample_port_complex.png",
+        "name": "Industrial Port Terminal & Docks",
+        "sensor": "Cartosat-3 PAN / Sentinel-2",
+        "resolution": "0.5 m / 10 m",
+        "date": "2022-07-03",
+        "location": "Coastal Shipping Docks",
+        "query": "Describe the harbor layout, pier structures, and cargo container holding yards.",
+        "provenance": "ISRO Cartosat / Copernicus"
+      },
+      {
+        "id": "forest_boundary_res",
+        "file": "single_optical/sample_forest_boundary.png",
+        "name": "Protected Forest Canopy Boundary",
+        "sensor": "ResourceSat-2 LISS-4",
+        "resolution": "5.0 m",
+        "date": "2023-11-20",
+        "location": "Protected Woodlands",
+        "query": "Assess forest density, canopy continuity, and agricultural transition lines.",
+        "provenance": "ISRO ResourceSat / Bhuvan"
+      },
+      {
+        "id": "agri_fields_s2",
+        "file": "single_optical/sample_agri_fields.png",
+        "name": "Cropland & Parcel Mosaic",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Agricultural Plains",
+        "query": "Characterize crop growth stages, parcel boundaries, and irrigation canals.",
+        "provenance": "Copernicus Sentinel-2 Level-2A"
+      }
     ],
     "files": [
       "sample_coastal_port.png"
@@ -19,7 +80,68 @@
     "query": "Locate the large industrial warehouse and any parking lots.",
     "input_mode": "single",
     "sample_files": [
-      "single_optical/sample_urban_grounding.png"
+      "single_optical/sample_urban_grounding.png",
+      "single_optical/sample_landsat_santiago_urban.png",
+      "single_optical/sample_landsat_ontario_industrial.png",
+      "single_optical/sample_port_complex.png",
+      "single_optical/sample_coastal_port.png"
+    ],
+    "sample_items": [
+      {
+        "id": "urban_grounding_s2",
+        "file": "single_optical/sample_urban_grounding.png",
+        "name": "Industrial Logistics Park",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Logistics Corridor",
+        "query": "Locate the large industrial warehouse and any parking lots.",
+        "provenance": "Copernicus Sentinel-2 Level-2A"
+      },
+      {
+        "id": "landsat_santiago_urban",
+        "file": "single_optical/sample_landsat_santiago_urban.png",
+        "name": "Santiago Metropolitan Belt",
+        "sensor": "Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "2001-02-10",
+        "location": "Santiago Metropolitan Basin",
+        "query": "Highlight the built-up urban center and locate major transport arteries.",
+        "provenance": "NASA / USGS Landsat Science Archive"
+      },
+      {
+        "id": "landsat_ontario_hubs",
+        "file": "single_optical/sample_landsat_ontario_industrial.png",
+        "name": "Ontario Inland Logistics Hub",
+        "sensor": "Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "2002-08-19",
+        "location": "Inland Empire Logistics Zone",
+        "query": "Locate large distribution centers and freight rail corridors.",
+        "provenance": "NASA / USGS Landsat Science Archive"
+      },
+      {
+        "id": "port_complex_terminals",
+        "file": "single_optical/sample_port_complex.png",
+        "name": "Port Container Yard Grounding",
+        "sensor": "Cartosat-3 PAN / Sentinel-2",
+        "resolution": "0.5 m / 10 m",
+        "date": "2022-07-03",
+        "location": "Maritime Port",
+        "query": "Locate container storage stacks and crane infrastructure.",
+        "provenance": "ISRO Cartosat / Copernicus"
+      },
+      {
+        "id": "coastal_facility_grounding",
+        "file": "single_optical/sample_coastal_port.png",
+        "name": "Coastal Facility & Pier Grounding",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Mediterranean Coast",
+        "query": "Locate coastal berths and shoreline breakwater structures.",
+        "provenance": "Copernicus Sentinel-2 Level-2A"
+      }
     ],
     "files": [
       "sample_urban_grounding.png"
@@ -35,6 +157,64 @@
     "sample_files": [
       "bitemporal_pairs/sample_levir_pre.png",
       "bitemporal_pairs/sample_levir_post.png"
+    ],
+    "sample_items": [
+      {
+        "id": "levir_cd_urban_pair",
+        "files": [
+          "bitemporal_pairs/sample_levir_pre.png",
+          "bitemporal_pairs/sample_levir_post.png"
+        ],
+        "name": "LEVIR-CD High-Res Urban Expansion (2020 vs 2024)",
+        "sensor": "VHR Satellite Optical",
+        "resolution": "0.5 m",
+        "date": "2020-05-12 → 2024-06-18",
+        "location": "Suburban Development Sector",
+        "query": "What changed between these two dates? Has new construction occurred?",
+        "provenance": "LEVIR-CD Benchmark (Chen et al.)"
+      },
+      {
+        "id": "landsat_vegas_growth_pair",
+        "files": [
+          "bitemporal_pairs/sample_landsat_vegas_t1.png",
+          "bitemporal_pairs/sample_landsat_vegas_t2.png"
+        ],
+        "name": "Las Vegas Desert Urban Encroachment (1984 vs 2000s)",
+        "sensor": "Landsat-5 TM / Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "1984-08-20 → 2002-09-14",
+        "location": "Las Vegas Valley & Lake Mead",
+        "query": "Identify suburban perimeter expansion and reduction in water surface extent.",
+        "provenance": "NASA / USGS Landsat Multi-Decadal"
+      },
+      {
+        "id": "landsat_bosphorus_growth_pair",
+        "files": [
+          "bitemporal_pairs/sample_landsat_bosphorus_1975.png",
+          "bitemporal_pairs/sample_landsat_bosphorus_2000.png"
+        ],
+        "name": "Istanbul Multi-Decadal Urban Sprawl (1975 vs 2000)",
+        "sensor": "Landsat MSS / Landsat-7 ETM+",
+        "resolution": "30.0 m - 60.0 m",
+        "date": "1975-06-10 → 2000-07-02",
+        "location": "Bosphorus Strait & European/Asian sectors",
+        "query": "Quantify urban footprint expansion over previously forested and agricultural terrain.",
+        "provenance": "NASA / USGS Landsat Multi-Decadal"
+      },
+      {
+        "id": "sentinel2_urban_t1_t2_pair",
+        "files": [
+          "bitemporal_pairs/sample_urban_t1.png",
+          "bitemporal_pairs/sample_urban_t2.png"
+        ],
+        "name": "Sentinel-2 Multi-Temporal Infrastructure Monitoring",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03 → 2024-07-03",
+        "location": "Regional Industrial District",
+        "query": "Has built-up area increased in this region between the two acquisitions?",
+        "provenance": "Copernicus Sentinel-2 Multi-temporal"
+      }
     ],
     "files": [
       "sample_levir_pre.png",
@@ -52,6 +232,50 @@
       "optical_sar_pairs/sample_monsoon_cloudy.png",
       "optical_sar_pairs/sample_sar_vv_vh.png"
     ],
+    "sample_items": [
+      {
+        "id": "monsoon_cloud_sar_pair",
+        "files": [
+          "optical_sar_pairs/sample_monsoon_cloudy.png",
+          "optical_sar_pairs/sample_sar_vv_vh.png"
+        ],
+        "name": "Monsoon Overcast & Sentinel-1 C-SAR Penetration",
+        "sensor": "Sentinel-2A MSI + Sentinel-1 C-SAR",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Coastal Floodplain & Estuary",
+        "query": "Identify flooded areas despite cloud cover using the paired SAR data.",
+        "provenance": "SEN12MS-CR & Copernicus Open Access"
+      },
+      {
+        "id": "urban_city_opt_sar_pair",
+        "files": [
+          "optical_sar_pairs/sample_city_opt.png",
+          "optical_sar_pairs/sample_city_sar.png"
+        ],
+        "name": "Urban Core Optical + SAR Double-Bounce Verification",
+        "sensor": "Sentinel-2A MSI + Sentinel-1 C-SAR",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Metropolitan Infrastructure",
+        "query": "Cross-check optical built-up features with radar high VV/VH backscatter.",
+        "provenance": "SEN12MS Multimodal Benchmark"
+      },
+      {
+        "id": "coastal_coast_opt_sar_pair",
+        "files": [
+          "optical_sar_pairs/sample_coast_opt.png",
+          "optical_sar_pairs/sample_coast_sar.png"
+        ],
+        "name": "Coastal Inundation & Low-Backscatter Water Delineation",
+        "sensor": "Sentinel-2A MSI + Sentinel-1 C-SAR",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Coastal Littoral Zone",
+        "query": "Delineate water bodies using radar specular reflection to penetrate haze.",
+        "provenance": "SEN12MS Multimodal Benchmark"
+      }
+    ],
     "files": [
       "sample_monsoon_cloudy.png",
       "sample_sar_vv_vh.png"
@@ -68,6 +292,50 @@
       "bitemporal_pairs/sample_urban_t1.png",
       "bitemporal_pairs/sample_urban_t2.png"
     ],
+    "sample_items": [
+      {
+        "id": "sentinel2_urban_t1_t2_item",
+        "files": [
+          "bitemporal_pairs/sample_urban_t1.png",
+          "bitemporal_pairs/sample_urban_t2.png"
+        ],
+        "name": "Sentinel-2 Multi-Temporal Urban Evolution",
+        "sensor": "Sentinel-2 MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03 → 2024-07-03",
+        "location": "Urbanizing Periphery",
+        "query": "Has built-up area increased in this region between the two acquisitions?",
+        "provenance": "Copernicus Sentinel-2 Multi-temporal"
+      },
+      {
+        "id": "levir_change_urban_item",
+        "files": [
+          "bitemporal_pairs/sample_levir_pre.png",
+          "bitemporal_pairs/sample_levir_post.png"
+        ],
+        "name": "LEVIR-CD Suburban Building Encroachment",
+        "sensor": "VHR Satellite Optical",
+        "resolution": "0.5 m",
+        "date": "2020-05-12 → 2024-06-18",
+        "location": "Suburban Construction Zone",
+        "query": "Quantify newly built residential complexes and infrastructure footprint.",
+        "provenance": "LEVIR-CD Benchmark (Chen et al.)"
+      },
+      {
+        "id": "vegas_change_item",
+        "files": [
+          "bitemporal_pairs/sample_landsat_vegas_t1.png",
+          "bitemporal_pairs/sample_landsat_vegas_t2.png"
+        ],
+        "name": "Multi-Decadal Desert Metropolization",
+        "sensor": "Landsat-5 TM / Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "1984 → 2002",
+        "location": "Las Vegas Basin",
+        "query": "Has built-up urban area encroached on surrounding natural desert terrain?",
+        "provenance": "NASA / USGS Landsat Multi-Decadal"
+      }
+    ],
     "files": [
       "sample_urban_t1.png",
       "sample_urban_t2.png"
@@ -81,7 +349,68 @@
     "query": "Count the docked vessels, assess port activity level, and flag any anomalous wake patterns.",
     "input_mode": "single",
     "sample_files": [
-      "single_optical/sample_port_complex.png"
+      "single_optical/sample_port_complex.png",
+      "single_optical/sample_landsat_tokyo_harbor_complex.png",
+      "single_optical/sample_landsat_istanbul_bosphorus.png",
+      "single_optical/sample_coastal_port.png",
+      "single_optical/sample_forest_boundary.png"
+    ],
+    "sample_items": [
+      {
+        "id": "port_complex_activity",
+        "file": "single_optical/sample_port_complex.png",
+        "name": "Major Harbor Terminal Operations",
+        "sensor": "Cartosat-3 PAN / Sentinel-2",
+        "resolution": "0.5 m / 10 m",
+        "date": "2022-07-03",
+        "location": "International Container Port",
+        "query": "Count the docked vessels, assess port activity level, and flag any anomalous wake patterns.",
+        "provenance": "ISRO Cartosat / Copernicus"
+      },
+      {
+        "id": "tokyo_harbor_complex",
+        "file": "single_optical/sample_landsat_tokyo_harbor_complex.png",
+        "name": "Tokyo Bay Shipping & Reclaimed Landfills",
+        "sensor": "Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "2000-09-24",
+        "location": "Tokyo Bay Maritime Corridor",
+        "query": "Assess port activity, shipping navigation channels, and artificial island complexes.",
+        "provenance": "NASA / USGS Landsat Science Archive"
+      },
+      {
+        "id": "istanbul_maritime_strait",
+        "file": "single_optical/sample_landsat_istanbul_bosphorus.png",
+        "name": "Bosphorus Transit & Anchorage Zones",
+        "sensor": "Landsat-7 ETM+",
+        "resolution": "30.0 m",
+        "date": "2000-06-15",
+        "location": "Bosphorus Strait",
+        "query": "Identify maritime vessels navigating the strait and examine dockyard capacity.",
+        "provenance": "NASA / USGS Landsat Science Archive"
+      },
+      {
+        "id": "coastal_berths_eval",
+        "file": "single_optical/sample_coastal_port.png",
+        "name": "Mediterranean Terminal Berths",
+        "sensor": "Sentinel-2A MSI",
+        "resolution": "10.0 m",
+        "date": "2022-07-03",
+        "location": "Mediterranean Coast",
+        "query": "Evaluate commercial dock occupancy and detect any coastal water turbidity anomalies.",
+        "provenance": "Copernicus Sentinel-2 Level-2A"
+      },
+      {
+        "id": "woodland_compound",
+        "file": "single_optical/sample_forest_boundary.png",
+        "name": "Forest Canopy Ecological Audit",
+        "sensor": "ResourceSat-2 LISS-4",
+        "resolution": "5.0 m",
+        "date": "2023-11-20",
+        "location": "Protected Woodland Sector",
+        "query": "Assess vegetation density index, identify access roads, and flag clearcut edges.",
+        "provenance": "ISRO ResourceSat / Bhuvan"
+      }
     ],
     "files": [
       "sample_port_complex.png"

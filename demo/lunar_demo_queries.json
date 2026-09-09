@@ -4,6 +4,82 @@
     "label": "1. Impact Crater & Terraced Rim Analysis (Boguslawsky)",
     "task": "lunar_vqa",
     "file": "ch2_ohrc_crater_boguslawsky.png",
+    "sample_files": [
+      "ch2_ohrc_crater_boguslawsky.png",
+      "ch2_lroc_burg_terraced_wall.png",
+      "ch2_lroc_bright_crater_rays.png",
+      "ch2_lroc_tycho_central_peak.png",
+      "ch2_lroc_bullialdus_peak.png",
+      "ch2_lroc_copernicus_wac_rays.png"
+    ],
+    "sample_items": [
+      {
+        "id": "ch2_ohrc_boguslawsky",
+        "file": "ch2_ohrc_crater_boguslawsky.png",
+        "name": "Boguslawsky Crater Rim",
+        "sensor": "Chandrayaan-2 OHRC",
+        "resolution": "0.25 m",
+        "date": "2020-01-14",
+        "location": "72.9° S, 43.3° E (Moon)",
+        "query": "Identify the prominent impact crater rims and evaluate the terraced wall slope features.",
+        "provenance": "ISRO / ISSDC PRADAN"
+      },
+      {
+        "id": "lroc_burg_terraces",
+        "file": "ch2_lroc_burg_terraced_wall.png",
+        "name": "Bürg Terraced Inner Wall",
+        "sensor": "LROC NAC",
+        "resolution": "0.45 m",
+        "date": "2018-06-22",
+        "location": "45.0° N, 28.2° E (Moon)",
+        "query": "Examine the slope angles, scarps, and structural terraces on this crater wall.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_bright_crater_rays",
+        "file": "ch2_lroc_bright_crater_rays.png",
+        "name": "Fresh Rayed Impact Crater",
+        "sensor": "LROC NAC",
+        "resolution": "0.40 m",
+        "date": "2019-09-08",
+        "location": "12.6° S, 148.9° E (Moon)",
+        "query": "Detect the central cavity, measure crater dimensions, and describe the asymmetric ejecta blanket.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_tycho_peak",
+        "file": "ch2_lroc_tycho_central_peak.png",
+        "name": "Tycho Central Uplift Peak",
+        "sensor": "LROC NAC",
+        "resolution": "0.50 m",
+        "date": "2011-06-10",
+        "location": "43.3° S, 11.2° W (Moon)",
+        "query": "Analyze boulder distributions and impact melt pools on the central uplift summit.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_bullialdus_mountain",
+        "file": "ch2_lroc_bullialdus_peak.png",
+        "name": "Bullialdus Anorthosite Uplift",
+        "sensor": "LROC NAC",
+        "resolution": "0.60 m",
+        "date": "2013-04-15",
+        "location": "20.7° S, 22.2° W (Moon)",
+        "query": "Identify excavated deep-crust bedrock blocks and shattered ejecta fragments.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_copernicus_system",
+        "file": "ch2_lroc_copernicus_wac_rays.png",
+        "name": "Copernicus Ray System (WAC)",
+        "sensor": "LROC WAC Multispectral",
+        "resolution": "4.0 m",
+        "date": "2012-03-29",
+        "location": "9.6° N, 20.1° W (Moon)",
+        "query": "Describe the radial rays and compositional variations across the continuous ejecta.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      }
+    ],
     "query": "Identify the prominent impact crater rims and evaluate the terraced wall slope features.",
     "expected_badge": "Experimental — No Cross-Check Available",
     "why_it_matters": "Critical for Artemis/Chandrayaan landing site hazard avoidance, characterizing boulder distribution and steep slope hazards."
@@ -13,15 +89,167 @@
     "label": "2. Permanently Shadowed Region (PSR) Detection (Shackleton Rim)",
     "task": "lunar_vqa",
     "file": "ch2_ohrc_shackleton_rim_psr.png",
+    "sample_files": [
+      "ch2_ohrc_shackleton_rim_psr.png",
+      "ch2_lroc_peary_polar_crater.png",
+      "ch2_lroc_highlands_terrain.png",
+      "ch2_ohrc_crater_boguslawsky.png",
+      "ch2_lroc_tycho_central_peak.png",
+      "ch2_lroc_burg_terraced_wall.png"
+    ],
+    "sample_items": [
+      {
+        "id": "ch2_ohrc_shackleton",
+        "file": "ch2_ohrc_shackleton_rim_psr.png",
+        "name": "Shackleton South Pole Rim",
+        "sensor": "Chandrayaan-2 OHRC",
+        "resolution": "0.32 m",
+        "date": "2020-02-18",
+        "location": "89.9° S, 0.0° E (Moon)",
+        "query": "Detect deep shadowed pockets and candidate permanently shadowed cold-traps for volatiles.",
+        "provenance": "ISRO / ISSDC PRADAN"
+      },
+      {
+        "id": "lroc_peary_polar_coldtrap",
+        "file": "ch2_lroc_peary_polar_crater.png",
+        "name": "Peary North Pole Cold Trap",
+        "sensor": "LROC WAC",
+        "resolution": "1.50 m",
+        "date": "2014-11-03",
+        "location": "88.6° N, 33.0° E (Moon)",
+        "query": "Map low-illumination boundaries and identify permanently shadowed crater depressions.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_highlands_shadows",
+        "file": "ch2_lroc_highlands_terrain.png",
+        "name": "South Highland Micro-Shadows",
+        "sensor": "LROC WAC",
+        "resolution": "2.0 m",
+        "date": "2015-08-12",
+        "location": "54.1° S, 16.4° E (Moon)",
+        "query": "Evaluate micro-shadowing across saturated craters and assess rover transit trafficability.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "ch2_ohrc_polar_flank",
+        "file": "ch2_ohrc_crater_boguslawsky.png",
+        "name": "High-Latitude Crater Flanks",
+        "sensor": "Chandrayaan-2 OHRC",
+        "resolution": "0.25 m",
+        "date": "2020-01-14",
+        "location": "72.9° S, 43.3° E (Moon)",
+        "query": "Identify permanently shadowed or strongly shadowed regions along south-facing crater scarps.",
+        "provenance": "ISRO / ISSDC PRADAN"
+      },
+      {
+        "id": "lroc_tycho_shadow_melt",
+        "file": "ch2_lroc_tycho_central_peak.png",
+        "name": "Shadowed Impact Melt Pockets",
+        "sensor": "LROC NAC",
+        "resolution": "0.50 m",
+        "date": "2011-06-10",
+        "location": "43.3° S, 11.2° W (Moon)",
+        "query": "Distinguish between steep topographical shadows and low-albedo basaltic impact melt pools.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_burg_shadow_zone",
+        "file": "ch2_lroc_burg_terraced_wall.png",
+        "name": "Deep Wall Shadow Envelope",
+        "sensor": "LROC NAC",
+        "resolution": "0.45 m",
+        "date": "2018-06-22",
+        "location": "45.0° N, 28.2° E (Moon)",
+        "query": "Estimate the depth and extent of the shadowed zone on the inward-facing slope.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      }
+    ],
     "query": "Detect deep shadowed pockets and candidate permanently shadowed cold-traps for volatiles.",
     "expected_badge": "Experimental — No Cross-Check Available",
     "why_it_matters": "Assists ISRO and international science teams in mapping volatile cold-traps and lunar south pole water-ice reservoirs."
   },
   {
     "id": "lunar_query_03",
-    "label": "3. Regolith Texture & Immature Ejecta Rays",
+    "label": "3. Regolith Texture & Immature Ejecta Rays (TMC-2 & LROC)",
     "task": "lunar_vqa",
     "file": "ch2_tmc2_regolith_ejecta.png",
+    "sample_files": [
+      "ch2_tmc2_regolith_ejecta.png",
+      "ch2_lroc_bright_crater_rays.png",
+      "ch2_lroc_copernicus_wac_rays.png",
+      "ch2_lroc_highlands_terrain.png",
+      "ch2_lroc_bullialdus_peak.png",
+      "ch2_ohrc_crater_boguslawsky.png"
+    ],
+    "sample_items": [
+      {
+        "id": "ch2_tmc2_regolith",
+        "file": "ch2_tmc2_regolith_ejecta.png",
+        "name": "Mare Basalt & Ejecta Rays",
+        "sensor": "Chandrayaan-2 TMC-2",
+        "resolution": "5.0 m",
+        "date": "2019-12-05",
+        "location": "18.5° N, 55.2° E (Moon)",
+        "query": "Characterize the regolith grain texture and map the radial ejecta ray distribution.",
+        "provenance": "ISRO / ISSDC PRADAN"
+      },
+      {
+        "id": "lroc_bright_ejecta",
+        "file": "ch2_lroc_bright_crater_rays.png",
+        "name": "High-Albedo Immature Ray Field",
+        "sensor": "LROC NAC",
+        "resolution": "0.40 m",
+        "date": "2019-09-08",
+        "location": "12.6° S, 148.9° E (Moon)",
+        "query": "Analyze reflectance contrast of young unweathered ray filaments against space-weathered background regolith.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_copernicus_regolith",
+        "file": "ch2_lroc_copernicus_wac_rays.png",
+        "name": "Copernicus Ejecta Blanket",
+        "sensor": "LROC WAC Multispectral",
+        "resolution": "4.0 m",
+        "date": "2012-03-29",
+        "location": "9.6° N, 20.1° W (Moon)",
+        "query": "Classify the compositional variations in regolith maturity across the outer continuous blanket.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_ancient_highlands",
+        "file": "ch2_lroc_highlands_terrain.png",
+        "name": "Space-Weathered Mature Highlands",
+        "sensor": "LROC WAC",
+        "resolution": "2.0 m",
+        "date": "2015-08-12",
+        "location": "54.1° S, 16.4° E (Moon)",
+        "query": "Describe morphological evolution and impact gardening visible across the highland regolith surface.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "lroc_bullialdus_boulders",
+        "file": "ch2_lroc_bullialdus_peak.png",
+        "name": "Coarse Ejecta & Boulder Fields",
+        "sensor": "LROC NAC",
+        "resolution": "0.60 m",
+        "date": "2013-04-15",
+        "location": "20.7° S, 22.2° W (Moon)",
+        "query": "Identify boulder populations exceeding 1 meter in diameter adjacent to the rocky summit.",
+        "provenance": "NASA LROC / PDS Geosciences"
+      },
+      {
+        "id": "ch2_ohrc_terraced_grain",
+        "file": "ch2_ohrc_crater_boguslawsky.png",
+        "name": "Sub-Meter Terraced Regolith",
+        "sensor": "Chandrayaan-2 OHRC",
+        "resolution": "0.25 m",
+        "date": "2020-01-14",
+        "location": "72.9° S, 43.3° E (Moon)",
+        "query": "Examine granular downhill creep and micro-cratering within the fine-grained regolith cover.",
+        "provenance": "ISRO / ISSDC PRADAN"
+      }
+    ],
     "query": "Characterize the regolith grain texture and map the radial ejecta ray distribution.",
     "expected_badge": "Experimental — No Cross-Check Available",
     "why_it_matters": "Determines surface maturity, space weathering extent, and trafficability for lunar roving vehicles."

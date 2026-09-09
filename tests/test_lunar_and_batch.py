@@ -103,3 +103,30 @@ def test_batch_pipeline_sequential_and_error_isolation():
 
     # Verify progress callback was invoked
     assert len(progress_calls) >= 3
+
+
+def test_lunar_domain_guard_rejects_earth_queries():
+    img = (np.random.rand(64, 64) * 255).astype(np.uint8)
+    # Earth-specific query on lunar mode
+    res = run_lunar_pipeline([img], [{"filename": "ch2_ohrc.tif"}], "Find buildings and roads in this scene")
+    assert "Lunar mode is active" in res["answer"]
+    assert "disabled" in res["answer"]
+    assert "craters" in res["answer"]
+    assert res["confidence_tag"] == "experimental_unverified"
+    assert res["trace"]["parameters"]["domain_guard"] == "earth_keyword_intercepted"
+
+
+def test_lunar_scientific_measurement_honesty():
+    img = (np.random.rand(64, 64) * 255).astype(np.uint8)
+    # 1. Uncalibrated image (no resolution in metadata)
+    res_uncal = run_lunar_pipeline([img], [{"filename": "ch2_raw.tif"}], "Measure crater diameter")
+    meas_uncal = res_uncal["verified_facts"]["measurements"]
+    assert "unavailable" in meas_uncal["diameter"].lower()
+    assert meas_uncal["scale_status"] == "uncalibrated"
+
+    # 2. Calibrated image (resolution provided in metadata)
+    res_cal = run_lunar_pipeline([img], [{"filename": "ch2_calibrated.tif", "resolution_m_per_pixel": 0.25}], "Measure crater diameter")
+    meas_cal = res_cal["verified_facts"]["measurements"]
+    assert "0.25" in meas_cal["diameter"]
+    assert meas_cal["scale_status"] == "calibrated"
+

@@ -2,7 +2,7 @@
   "dataset": "SatQuery AI Real Earth Observation Demonstration Samples",
   "provenance_standard": "SIH 2026 PS 26167 (ISRO/SAC)",
   "synthetic": false,
-  "total_samples": 18,
+  "total_samples": 24,
   "samples": [
     {
       "file": "sample_coastal_port.png",
@@ -410,6 +410,106 @@
       ],
       "channels": 3,
       "license": "Copernicus Open Access",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_istanbul_bosphorus.png",
+      "rel_path": "single_optical/sample_landsat_istanbul_bosphorus.png",
+      "category": "single_optical",
+      "task_type": "single_caption",
+      "sensor": "Landsat-7 ETM+",
+      "source_dataset": "USGS / NASA Landsat Science Archive",
+      "acquisition_date": "2000-06-15",
+      "crs": "EPSG:32635",
+      "resolution_m": 30.0,
+      "bands": [
+        "NIR (B4)",
+        "Red (B3)",
+        "Green (B2)"
+      ],
+      "license": "NASA / USGS Open Data (Public Domain)",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_santiago_urban.png",
+      "rel_path": "single_optical/sample_landsat_santiago_urban.png",
+      "category": "single_optical",
+      "task_type": "grounding",
+      "sensor": "Landsat-7 ETM+",
+      "source_dataset": "USGS / NASA Landsat Science Archive",
+      "acquisition_date": "2001-02-10",
+      "crs": "EPSG:32719",
+      "resolution_m": 30.0,
+      "bands": [
+        "NIR (B4)",
+        "Red (B3)",
+        "Green (B2)"
+      ],
+      "license": "NASA / USGS Open Data (Public Domain)",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_ontario_industrial.png",
+      "rel_path": "single_optical/sample_landsat_ontario_industrial.png",
+      "category": "single_optical",
+      "task_type": "grounding",
+      "sensor": "Landsat-7 ETM+",
+      "source_dataset": "USGS / NASA Landsat Science Archive",
+      "acquisition_date": "2002-08-19",
+      "crs": "EPSG:32611",
+      "resolution_m": 30.0,
+      "bands": [
+        "NIR (B4)",
+        "Red (B3)",
+        "Green (B2)"
+      ],
+      "license": "NASA / USGS Open Data (Public Domain)",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_tokyo_harbor_complex.png",
+      "rel_path": "single_optical/sample_landsat_tokyo_harbor_complex.png",
+      "category": "single_optical",
+      "task_type": "compound_reasoning",
+      "sensor": "Landsat-7 ETM+",
+      "source_dataset": "USGS / NASA Landsat Science Archive",
+      "acquisition_date": "2000-09-24",
+      "crs": "EPSG:32654",
+      "resolution_m": 30.0,
+      "bands": [
+        "NIR (B4)",
+        "Red (B3)",
+        "Green (B2)"
+      ],
+      "license": "NASA / USGS Open Data (Public Domain)",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_vegas_t1.png",
+      "rel_path": "bitemporal_pairs/sample_landsat_vegas_t1.png",
+      "paired_with": "sample_landsat_vegas_t2.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Landsat-5 TM",
+      "source_dataset": "USGS / NASA Landsat Multi-Decadal",
+      "acquisition_date": "1984-08-20",
+      "crs": "EPSG:32611",
+      "resolution_m": 30.0,
+      "license": "NASA / USGS Open Data (Public Domain)",
+      "synthetic": false
+    },
+    {
+      "file": "sample_landsat_vegas_t2.png",
+      "rel_path": "bitemporal_pairs/sample_landsat_vegas_t2.png",
+      "paired_with": "sample_landsat_vegas_t1.png",
+      "category": "bitemporal_pairs",
+      "task_type": "bitemporal_change",
+      "sensor": "Landsat-7 ETM+",
+      "source_dataset": "USGS / NASA Landsat Multi-Decadal",
+      "acquisition_date": "2002-09-14",
+      "crs": "EPSG:32611",
+      "resolution_m": 30.0,
+      "license": "NASA / USGS Open Data (Public Domain)",
       "synthetic": false
     }
   ]
