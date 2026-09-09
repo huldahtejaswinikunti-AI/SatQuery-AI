@@ -446,12 +446,20 @@ def run_change_detection(
     #
     # Uncomment the import and calls below when the classifier module lands:
     #
-    # from satquery.classifiers.predict import classify_land_cover
-    # class_before = classify_land_cover(np.array(pil_before))
-    # class_after  = classify_land_cover(np.array(pil_after))
     # -----------------------------------------------------------------------
-    class_before: list[str] = []  # STUB — populated by land-cover classifier
-    class_after: list[str] = []   # STUB — populated by land-cover classifier
+    # Land-cover classification on both images for before/after comparison.
+    # Uses the fine-tuned ResNet-18 classifier.
+    # -----------------------------------------------------------------------
+    try:
+        from satquery.classifiers.predict import predict as _lc_predict
+        preds_before = _lc_predict(np.array(pil_before))
+        preds_after = _lc_predict(np.array(pil_after))
+        class_before = preds_before.get("labels", [])
+        class_after = preds_after.get("labels", [])
+    except Exception as lc_err:
+        logger.warning("Land-cover classification failed during change detection: %s", lc_err)
+        class_before = []
+        class_after = []
 
     change_summary = {
         "class_before": class_before,

@@ -53,6 +53,9 @@ try:
         render_overlay,
         render_execution_trace,
         render_download_buttons,
+        render_spectral_summary,
+        render_land_cover_table,
+        render_detailed_report,
     )
     from app.pipeline_bridge import run_pipeline
 except ImportError:
@@ -71,6 +74,9 @@ except ImportError:
         render_overlay,
         render_execution_trace,
         render_download_buttons,
+        render_spectral_summary,
+        render_land_cover_table,
+        render_detailed_report,
     )
     from pipeline_bridge import run_pipeline
 
@@ -264,11 +270,20 @@ with col_right:
         # Answer text
         st.markdown(res.get("answer", ""))
 
+        # Spectral analysis & scene composition
+        render_spectral_summary(res)
+
+        # Land cover classification breakdown
+        render_land_cover_table(res)
+
         # Change direction (if present)
         render_change_direction(res)
 
         # Overlay image (if present)
         render_overlay(res)
+
+        # Detailed analysis report
+        render_detailed_report(res)
 
         # Execution trace
         render_execution_trace(res)

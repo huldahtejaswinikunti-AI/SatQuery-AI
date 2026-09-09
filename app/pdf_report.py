@@ -193,14 +193,35 @@ def generate_pdf_report(
             # Verified facts if present
             verified_facts = result.get("verified_facts") or trace.get("verified_facts") or []
             if verified_facts:
+                if isinstance(verified_facts, dict):
+                    facts_list = []
+                    if "reason" in verified_facts:
+                        facts_list.append({"fact": str(verified_facts["reason"]), "verified": verified_facts.get("agreed", True)})
+                    if "confidence_tag" in verified_facts:
+                        facts_list.append({"fact": f"Confidence tag: {verified_facts['confidence_tag']}", "verified": True})
+                    if "spectral_summary" in verified_facts and isinstance(verified_facts["spectral_summary"], dict):
+                        spec = verified_facts["spectral_summary"]
+                        facts_list.append({"fact": f"NDVI: {spec.get('ndvi_mean')}, NDWI: {spec.get('ndwi_mean')}", "verified": True})
+                    if not facts_list:
+                        facts_list = [{"fact": f"{k}: {v}", "verified": True} for k, v in verified_facts.items() if k not in ("overlay", "trace")]
+                    facts_to_render = facts_list
+                elif isinstance(verified_facts, (list, tuple)):
+                    facts_to_render = list(verified_facts)
+                else:
+                    facts_to_render = [{"fact": str(verified_facts), "verified": True}]
+
                 pdf.ln(1)
                 pdf.set_font("Helvetica", "B", 9)
-                pdf.cell(0, 5, f"Verified Facts ({len(verified_facts)} statements checked):", new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(0, 5, f"Verified Facts ({len(facts_to_render)} statements checked):", new_x="LMARGIN", new_y="NEXT")
                 pdf.set_font("Helvetica", "", 8)
-                for vf in verified_facts[:8]:  # show up to 8
-                    status = "[VERIFIED]" if vf.get("verified", True) else "[UNVERIFIED]"
-                    stmt = vf.get("fact") or vf.get("statement") or str(vf)
-                    pdf.multi_cell(0, 4, f"  {status} {_sanitize(stmt)}")
+                for vf in facts_to_render[:8]:  # show up to 8
+                    if isinstance(vf, dict):
+                        status = "[VERIFIED]" if vf.get("verified", True) else "[UNVERIFIED]"
+                        stmt = vf.get("fact") or vf.get("statement") or str(vf)
+                    else:
+                        status = "[VERIFIED]"
+                        stmt = str(vf)
+                    pdf.multi_cell(0, 4, f"  {status} {_sanitize(stmt)}", new_x="LMARGIN", new_y="NEXT")
 
         # Output bytes
         out = pdf.output()

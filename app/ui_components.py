@@ -233,6 +233,7 @@ def render_execution_trace(result: dict[str, Any]) -> None:
         st.json(trace)
 
 
+
 # ---------------------------------------------------------------------------
 # Download buttons
 # ---------------------------------------------------------------------------
@@ -295,3 +296,92 @@ def render_download_buttons(result: dict[str, Any]) -> None:
                 disabled=True,
                 help="PDF generation not available (fpdf2 not installed)",
             )
+
+
+# ---------------------------------------------------------------------------
+# Spectral Analysis Summary
+# ---------------------------------------------------------------------------
+
+
+def render_spectral_summary(result: dict[str, Any]) -> None:
+    """Render spectral index bars and scene composition breakdown."""
+    vf = result.get("verified_facts", {})
+    if not isinstance(vf, dict):
+        return
+    spectral = vf.get("spectral_summary", {})
+    if not spectral:
+        return
+
+    with st.expander("Spectral Analysis & Scene Composition", expanded=True):
+        ndvi = spectral.get("ndvi_mean", 0)
+        ndwi = spectral.get("ndwi_mean", 0)
+        ndbi = spectral.get("ndbi_mean", 0)
+
+        # Index values as metrics
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric(
+                "NDVI (Vegetation)",
+                f"{ndvi:+.3f}",
+                delta=f"{spectral.get('vegetation_fraction', 0)*100:.1f}% coverage",
+            )
+        with c2:
+            st.metric(
+                "NDWI (Water)",
+                f"{ndwi:+.3f}",
+                delta=f"{spectral.get('water_fraction', 0)*100:.1f}% coverage",
+            )
+        with c3:
+            st.metric(
+                "NDBI (Built-up)",
+                f"{ndbi:+.3f}",
+                delta=f"{spectral.get('built_up_fraction', 0)*100:.1f}% coverage",
+            )
+
+        # Scene composition progress bars
+        veg_f = spectral.get("vegetation_fraction", 0)
+        wat_f = spectral.get("water_fraction", 0)
+        blt_f = spectral.get("built_up_fraction", 0)
+
+        st.markdown("**Scene Composition:**")
+        st.progress(min(veg_f, 1.0), text=f"Vegetation: {veg_f*100:.1f}%")
+        st.progress(min(wat_f, 1.0), text=f"Water: {wat_f*100:.1f}%")
+        st.progress(min(blt_f, 1.0), text=f"Built-up: {blt_f*100:.1f}%")
+
+
+# ---------------------------------------------------------------------------
+# Land Cover Classification Table
+# ---------------------------------------------------------------------------
+
+
+def render_land_cover_table(result: dict[str, Any]) -> None:
+    """Render the top-K land cover classification breakdown."""
+    vf = result.get("verified_facts", {})
+    if not isinstance(vf, dict):
+        return
+    top_k = vf.get("top_k", [])
+    if not top_k:
+        return
+
+    with st.expander("Land Cover Classification", expanded=True):
+        st.markdown("**Multi-label classification (BigEarthNet-S2 / ResNet-18):**")
+        for entry in top_k:
+            name = entry.get("class_name", "Unknown")
+            prob = entry.get("probability", 0)
+            pct = prob * 100
+            st.progress(min(prob, 1.0), text=f"{name}: {pct:.1f}%")
+
+
+# ---------------------------------------------------------------------------
+# Detailed Analysis Report
+# ---------------------------------------------------------------------------
+
+
+def render_detailed_report(result: dict[str, Any]) -> None:
+    """Render the full markdown analysis report in an expander."""
+    report_md = result.get("report_markdown", "")
+    if not report_md:
+        return
+
+    with st.expander("Full Analysis Report", expanded=False):
+        st.markdown(report_md, unsafe_allow_html=True)

@@ -77,7 +77,10 @@ class TestDispatch:
 
         mock_specialist.assert_called_once()
         mock_verify.assert_called_once_with({"result": "test"})
-        mock_phrase.assert_called_once_with({"verified": True})
+        # phrase is called with enriched verified_facts (includes propagated fields)
+        mock_phrase.assert_called_once()
+        phrase_arg = mock_phrase.call_args[0][0]
+        assert phrase_arg["verified"] is True
 
         assert "trace" in result
         assert "answer" in result

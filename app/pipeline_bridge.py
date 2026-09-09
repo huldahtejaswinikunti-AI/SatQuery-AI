@@ -147,12 +147,19 @@ def _run_pipeline_inner(
     else:
         answer_text = str(answer_raw) if answer_raw else "Analysis complete."
 
-    # Confidence
-    conf_str = trace.get("confidence", str(router_confidence))
-    try:
-        conf_val = float(conf_str)
-    except (ValueError, TypeError):
-        conf_val = router_confidence
+    # Confidence — use specialist's raw_confidence as primary, not just router
+    raw_conf = None
+    if isinstance(verified_facts, dict):
+        raw_conf = verified_facts.get("raw_confidence")
+    if raw_conf is not None:
+        conf_val = float(raw_conf)
+    else:
+        conf_str = trace.get("confidence", str(router_confidence))
+        try:
+            conf_val = float(conf_str)
+        except (ValueError, TypeError):
+            conf_val = router_confidence
+    conf_str = str(round(conf_val, 4))
 
     # Determine confidence tag
     confidence_tag = _compute_confidence_tag(conf_val, verified_facts, task.value)
@@ -160,8 +167,8 @@ def _run_pipeline_inner(
     # Overlay (may be provided by specialists)
     overlay = raw.get("overlay", verified_facts.get("overlay") if isinstance(verified_facts, dict) else None)
 
-    # Generate markdown report
-    report_md = generate_report(trace, answer_text)
+    # Generate markdown report with enriched verified facts
+    report_md = generate_report(trace, answer_text, verified_facts=verified_facts)
 
     result = {
         "answer": answer_text,
@@ -173,6 +180,9 @@ def _run_pipeline_inner(
         "report_path": None,
         "report_markdown": report_md,
         "verified_facts": verified_facts,
+        # Direct access to enriched specialist data
+        "top_k": raw.get("top_k", verified_facts.get("top_k") if isinstance(verified_facts, dict) else None),
+        "spectral_summary": raw.get("spectral_summary", verified_facts.get("spectral_summary") if isinstance(verified_facts, dict) else None),
         # Passthrough optional fields from teammates
         "consensus_score": raw.get("consensus_score",
                                     verified_facts.get("consensus_score") if isinstance(verified_facts, dict) else None),
@@ -191,25 +201,27 @@ def _compute_confidence_tag(
     task_value: str,
 ) -> str:
     """Map confidence + verification status to a display tag."""
-    # Check if cross-verification was performed
-    is_verified = False
-    is_disagreement = False
-
     if isinstance(verified_facts, dict):
-        is_verified = verified_facts.get("cross_verified", False)
-        is_disagreement = verified_facts.get("disagreement", False)
-        # Check for explicit tag from backend
+        # Check for explicit tag from the cross-verifier
         explicit_tag = verified_facts.get("confidence_tag")
         if explicit_tag:
             return explicit_tag
 
-    if is_disagreement:
-        return "lower_confidence_disagreement"
+        is_agreed = verified_facts.get("agreed", False)
+        is_disagreement = verified_facts.get("disagreement", False)
 
-    if is_verified and confidence >= 0.7:
-        return "high_cross_verified"
+        if is_disagreement:
+            return "lower_confidence_disagreement"
 
-    if confidence >= 0.9:
+        if is_agreed:
+            if confidence >= 0.75:
+                return "high_cross_verified"
+            elif confidence >= 0.5:
+                return "moderate"
+            else:
+                return "low"
+
+    if confidence >= 0.85:
         return "high_rule_based"
 
     if confidence >= 0.5:

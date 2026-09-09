@@ -95,7 +95,7 @@ def _load_image_for_specialist(path: str) -> np.ndarray:
 # --- Real Specialists with Grounded Fallbacks ---
 
 def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
-    """Visual Question Answering specialist."""
+    """Visual Question Answering specialist — grounded in spectral indices."""
     arr = _load_image_for_specialist(validated_input.images[0].path)
     query = validated_input.query
 
@@ -107,27 +107,78 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
         except Exception as e:
             logger.warning("GeoChat VQA failed: %s", e)
 
-    # Use fine-tuned ResNet-18 Land-Cover checkpoint and spectral indices
+    # ---- Grounded analysis via classifier + spectral indices ----
     from satquery.classifiers.predict import predict
     from satquery.perception.spectral_indices import compute_spectral_indices
     preds = predict(arr)
+    top_k = preds.get("top_k", [])
     labels = preds.get("labels", [])
+    conf = float(preds.get("confidence", 0.5))
     label_str = ", ".join(labels) if labels else "mixed terrain"
-    conf = float(preds.get("confidence", 0.89))
 
     indices = compute_spectral_indices(arr)
     ndvi = float(np.mean(indices.ndvi))
     ndwi = float(np.mean(indices.ndwi))
+    ndbi = float(np.mean(indices.ndbi))
+    veg_frac = round(indices.vegetation_fraction * 100, 1)
+    water_frac = round(indices.water_fraction * 100, 1)
+    built_frac = round(indices.built_up_fraction * 100, 1)
 
+    # Build spectral summary for downstream verifier & reports
+    spectral_summary = {
+        "ndvi_mean": round(ndvi, 4),
+        "ndwi_mean": round(ndwi, 4),
+        "ndbi_mean": round(ndbi, 4),
+        "vegetation_fraction": indices.vegetation_fraction,
+        "water_fraction": indices.water_fraction,
+        "built_up_fraction": indices.built_up_fraction,
+    }
+
+    # Query-aware answer generation using REAL measurements
     q_lower = query.lower()
-    if any(w in q_lower for w in ("water", "flood", "river", "sea", "ocean", "port", "coast")):
-        ans = f"Maritime and aquatic features identified (NDWI: {ndwi:+.2f}). Surface classes: {label_str}."
-    elif any(w in q_lower for w in ("tree", "forest", "crop", "vegetation", "agriculture")):
-        ans = f"Vegetation canopy assessed at NDVI: {ndvi:+.2f}. Associated land cover: {label_str}."
-    elif any(w in q_lower for w in ("building", "urban", "structure", "industrial", "warehouse")):
-        ans = f"Built environment analysis confirms {label_str} with {conf*100:.1f}% confidence."
+    if any(w in q_lower for w in ("water", "flood", "river", "sea", "ocean", "port", "coast", "lake")):
+        ans = (
+            f"Water analysis: NDWI index measures {ndwi:+.3f} with {water_frac}% "
+            f"of the scene classified as water bodies. "
+            f"Dominant land cover: {label_str} (top-1 confidence: {conf*100:.1f}%)."
+        )
+        if water_frac > 5:
+            ans += f" Significant aquatic features confirmed by spectral reflectance."
+        else:
+            ans += f" Limited water presence detected in this scene."
+    elif any(w in q_lower for w in ("tree", "forest", "crop", "vegetation", "agriculture", "green")):
+        ans = (
+            f"Vegetation analysis: NDVI index measures {ndvi:+.3f} with {veg_frac}% "
+            f"vegetation coverage across the scene. "
+            f"Land cover classification: {label_str} (confidence: {conf*100:.1f}%)."
+        )
+        if ndvi > 0.3:
+            ans += " Dense, healthy vegetation canopy confirmed."
+        elif ndvi > 0.15:
+            ans += " Moderate vegetation presence with mixed ground cover."
+        else:
+            ans += " Sparse or stressed vegetation detected."
+    elif any(w in q_lower for w in ("building", "urban", "structure", "industrial", "warehouse", "city", "settlement")):
+        ans = (
+            f"Built-up area analysis: NDBI index measures {ndbi:+.3f} with {built_frac}% "
+            f"built-up coverage. Classification: {label_str} (confidence: {conf*100:.1f}%)."
+        )
+        if built_frac > 10:
+            ans += " Significant urban/industrial infrastructure confirmed."
+        else:
+            ans += " Limited built-up structures in this scene."
     else:
-        ans = f"Remote sensing analysis identifies {label_str} across the observation area (confidence: {conf:.2f})."
+        # General query — provide comprehensive breakdown
+        top_desc = "; ".join(
+            f"{t['class_name']} ({t['probability']*100:.1f}%)" for t in top_k[:3]
+        ) if top_k else label_str
+        ans = (
+            f"Remote sensing analysis identifies: {top_desc}. "
+            f"Scene composition: {veg_frac}% vegetation (NDVI: {ndvi:+.3f}), "
+            f"{water_frac}% water (NDWI: {ndwi:+.3f}), "
+            f"{built_frac}% built-up (NDBI: {ndbi:+.3f}). "
+            f"Primary classification confidence: {conf*100:.1f}%."
+        )
 
     return {
         "answer": ans,
@@ -135,11 +186,13 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
         "evidence": None,
         "source": "land_cover_specialist",
         "details": preds,
+        "spectral_summary": spectral_summary,
+        "top_k": top_k,
     }
 
 
 def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
-    """Single-image captioning specialist."""
+    """Single-image captioning specialist — richly grounded in spectral data."""
     arr = _load_image_for_specialist(validated_input.images[0].path)
 
     # If GeoChat-7B is loaded in memory, use it
@@ -150,25 +203,82 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
         except Exception as e:
             logger.warning("GeoChat captioning failed: %s", e)
 
-    # Grounded caption via fine-tuned ResNet-18 and spectral indices
+    # ---- Grounded caption via classifier + spectral indices ----
     from satquery.classifiers.predict import predict
     from satquery.perception.spectral_indices import compute_spectral_indices
     preds = predict(arr)
+    top_k = preds.get("top_k", [])
     labels = preds.get("labels", [])
-    label_str = ", ".join(labels) if labels else "natural satellite surface"
-    conf = float(preds.get("confidence", 0.91))
+    conf = float(preds.get("confidence", 0.5))
+    image_stats = preds.get("image_stats", {})
 
     indices = compute_spectral_indices(arr)
     ndvi = float(np.mean(indices.ndvi))
     ndwi = float(np.mean(indices.ndwi))
+    ndbi = float(np.mean(indices.ndbi))
+    veg_frac = round(indices.vegetation_fraction * 100, 1)
+    water_frac = round(indices.water_fraction * 100, 1)
+    built_frac = round(indices.built_up_fraction * 100, 1)
 
-    desc = f"Satellite observation showing {label_str}."
-    if ndwi > 0.05:
-        desc += " Prominent water bodies and coastal infrastructure detected."
-    elif ndvi > 0.25:
-        desc += " Dense, active vegetative canopy dominant across the scene."
+    spectral_summary = {
+        "ndvi_mean": round(ndvi, 4),
+        "ndwi_mean": round(ndwi, 4),
+        "ndbi_mean": round(ndbi, 4),
+        "vegetation_fraction": indices.vegetation_fraction,
+        "water_fraction": indices.water_fraction,
+        "built_up_fraction": indices.built_up_fraction,
+    }
+
+    # Build multi-sentence caption from real measurements
+    top_classes = ", ".join(
+        f"{t['class_name']} ({t['probability']*100:.1f}%)" for t in top_k[:3]
+    ) if top_k else ", ".join(labels) if labels else "unclassified terrain"
+
+    desc = f"Satellite observation classified as: {top_classes}."
+
+    # Dominant land type description
+    dominant = max(
+        [("vegetation", veg_frac, ndvi), ("water", water_frac, ndwi), ("built-up", built_frac, ndbi)],
+        key=lambda x: x[1]
+    )
+    if dominant[0] == "vegetation" and veg_frac > 15:
+        desc += (
+            f" The scene is predominantly vegetated ({veg_frac}% coverage, "
+            f"NDVI: {ndvi:+.3f}), indicating "
+        )
+        if ndvi > 0.4:
+            desc += "dense, healthy canopy — likely forest or productive cropland."
+        elif ndvi > 0.2:
+            desc += "moderate vegetation density — mixed agricultural or grassland cover."
+        else:
+            desc += "sparse or stressed vegetation."
+    elif dominant[0] == "water" and water_frac > 5:
+        desc += (
+            f" Prominent water bodies detected ({water_frac}% coverage, "
+            f"NDWI: {ndwi:+.3f}), suggesting "
+        )
+        if water_frac > 30:
+            desc += "a major aquatic feature — lake, reservoir, or coastal zone."
+        else:
+            desc += "rivers, ponds, or irrigation infrastructure."
+    elif dominant[0] == "built-up" and built_frac > 5:
+        desc += (
+            f" Built-up structures dominate ({built_frac}% coverage, "
+            f"NDBI: {ndbi:+.3f}), indicating "
+        )
+        if built_frac > 25:
+            desc += "dense urban or industrial development."
+        else:
+            desc += "scattered settlements or infrastructure."
     else:
-        desc += " Characterized by built-up structures and engineered surface terrain."
+        desc += (
+            f" Mixed land cover: {veg_frac}% vegetation, "
+            f"{water_frac}% water, {built_frac}% built-up."
+        )
+
+    # Add image metadata
+    dims = image_stats.get("dimensions", f"{arr.shape[1]}x{arr.shape[0]}")
+    desc += f" Image dimensions: {dims}."
 
     return {
         "answer": desc,
@@ -176,6 +286,8 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
         "evidence": None,
         "source": "land_cover_specialist",
         "details": preds,
+        "spectral_summary": spectral_summary,
+        "top_k": top_k,
     }
 
 
@@ -225,10 +337,12 @@ def run_fusion(validated_input: ValidatedInput) -> dict[str, Any]:
 
 
 def verify(facts: dict[str, Any]) -> dict[str, Any]:
-    """Cross-verification step."""
+    """Cross-verification step — passes real spectral fractions to verifier."""
     try:
         from satquery.cross_verification.verifier import verify as _cv_verify
-        return _cv_verify(facts, deterministic_signal=facts.get("details", facts))
+        # Build a proper deterministic signal from spectral data if available
+        det_signal = facts.get("spectral_summary", facts.get("details", facts))
+        return _cv_verify(facts, deterministic_signal=det_signal)
     except Exception as e:
         logger.warning("Cross-verification fallback: %s", e)
         return {
@@ -255,18 +369,47 @@ def _get_specialist(task: TaskType) -> tuple[Any, str]:
 # ---------------------------------------------------------------------------
 
 def phrase(verified_facts: dict[str, Any]) -> str:
-    """Convert structured facts to natural language with graceful fallback."""
+    """Convert structured facts to natural language with rich fallback formatting."""
+    # If we have a good answer already, enhance it with verification context
+    answer = ""
     if isinstance(verified_facts, dict) and verified_facts.get("answer"):
-        return str(verified_facts["answer"])
+        answer = str(verified_facts["answer"])
 
+    # Try the phrasing LLM first
     try:
         from satquery.phrasing.phrasing_llm import phrase as _phrasing_phrase
         return _phrasing_phrase(verified_facts)
     except Exception as e:
-        logger.warning("Phrasing fallback (%s); returning verified answer.", e)
-        if isinstance(verified_facts, dict) and "answer" in verified_facts:
-            return str(verified_facts["answer"])
-        return "Analysis successfully verified against physical sensor observations."
+        logger.warning("Phrasing fallback (%s); using structured formatting.", e)
+
+    if not answer:
+        answer = "Analysis complete."
+
+    # Build a richer formatted response from verified_facts
+    parts = [answer]
+
+    if isinstance(verified_facts, dict):
+        # Add verification context
+        conf_tag = verified_facts.get("confidence_tag", "")
+        reason = verified_facts.get("reason", "")
+        if conf_tag and reason:
+            tag_display = conf_tag.replace("_", " ").title()
+            parts.append(f"\n**Verification:** {tag_display} — {reason}")
+
+        # Add spectral summary if available
+        spectral = verified_facts.get("spectral_summary", {})
+        if spectral:
+            vf = spectral.get("vegetation_fraction", 0)
+            wf = spectral.get("water_fraction", 0)
+            bf = spectral.get("built_up_fraction", 0)
+            parts.append(
+                f"\n**Spectral Composition:** "
+                f"Vegetation {vf*100:.1f}% (NDVI: {spectral.get('ndvi_mean', 0):+.3f}) · "
+                f"Water {wf*100:.1f}% (NDWI: {spectral.get('ndwi_mean', 0):+.3f}) · "
+                f"Built-up {bf*100:.1f}% (NDBI: {spectral.get('ndbi_mean', 0):+.3f})"
+            )
+
+    return "\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -335,6 +478,13 @@ def execute(
             verified_facts["raw_confidence"] = facts.get("raw_confidence", 0.9)
         if "change_summary" in facts and "change_summary" not in verified_facts:
             verified_facts["change_summary"] = facts["change_summary"]
+        # Propagate enriched data for reports and UI
+        if "spectral_summary" in facts and "spectral_summary" not in verified_facts:
+            verified_facts["spectral_summary"] = facts["spectral_summary"]
+        if "top_k" in facts and "top_k" not in verified_facts:
+            verified_facts["top_k"] = facts["top_k"]
+        if "details" in facts and "details" not in verified_facts:
+            verified_facts["details"] = facts["details"]
 
     # --- Step 3: Phrasing ---
     tools_invoked.append("phrasing_llm")

@@ -58,6 +58,7 @@ def predict(
     image: Union[Image.Image, np.ndarray],
     threshold: float = 0.5,
     checkpoint_path: Optional[Union[str, Path]] = None,
+    top_k: int = 5,
 ) -> dict:
     """Run multi-label land-cover prediction on a single image.
 
@@ -69,19 +70,23 @@ def predict(
         Sigmoid threshold for positive labels (default 0.5).
     checkpoint_path : str | Path | None
         Override the default checkpoint location.
+    top_k : int
+        Number of top classes to include in the detailed breakdown.
 
     Returns
     -------
     dict
-        ``{"labels": list[str], "confidence": float}``
-        where *confidence* is the mean sigmoid probability of the active labels
-        (or 0.0 if no label exceeds the threshold).
+        ``{"labels": list[str], "confidence": float,
+           "top_k": list[dict], "class_probabilities": dict,
+           "image_stats": dict}``
     """
     model = _ensure_model(checkpoint_path)
     tfm = get_transforms(train=False)
 
-    # --- Normalise input to PIL ------------------------------------------------
+    # --- Normalise input to PIL & capture image stats -------------------------
+    raw_arr = None
     if isinstance(image, np.ndarray):
+        raw_arr = image.copy()
         # Handle (H, W, C) uint8 or float arrays
         if image.dtype != np.uint8:
             image = (np.clip(image, 0, 1) * 255).astype(np.uint8)
@@ -95,24 +100,57 @@ def predict(
     if image.mode != "RGB":
         image = image.convert("RGB")
 
+    # Image statistics for downstream reporting
+    img_arr = np.array(image, dtype=np.float32)
+    image_stats = {
+        "mean_brightness": round(float(np.mean(img_arr)), 2),
+        "std_brightness": round(float(np.std(img_arr)), 2),
+        "dimensions": f"{image.size[0]}x{image.size[1]}",
+        "mean_r": round(float(np.mean(img_arr[:, :, 0])), 2),
+        "mean_g": round(float(np.mean(img_arr[:, :, 1])), 2),
+        "mean_b": round(float(np.mean(img_arr[:, :, 2])), 2),
+    }
+
     tensor = tfm(image).unsqueeze(0).to(_device)  # (1, 3, 224, 224)
 
     with torch.no_grad():
         logits = model(tensor)              # (1, 19)
         probs = torch.sigmoid(logits)[0]    # (19,)
 
+    # --- Full per-class probability map ---------------------------------------
+    all_probs = {BIGEARTHNET_19_CLASSES[i]: round(float(probs[i].item()), 4)
+                 for i in range(len(BIGEARTHNET_19_CLASSES))}
+
+    # --- Top-K ranked classes -------------------------------------------------
+    sorted_indices = probs.argsort(descending=True).tolist()
+    top_k_list = []
+    for idx in sorted_indices[:top_k]:
+        top_k_list.append({
+            "class_name": BIGEARTHNET_19_CLASSES[idx],
+            "probability": round(float(probs[idx].item()), 4),
+        })
+
+    # --- Active labels (above threshold) --------------------------------------
     active_indices = (probs >= threshold).nonzero(as_tuple=True)[0].tolist()
 
     if active_indices:
         labels = [BIGEARTHNET_19_CLASSES[i] for i in active_indices]
-        confidence = float(probs[active_indices].mean().item())
+        # Use the MAX probability of active classes as primary confidence
+        # (mean hides the dominant class and flattens to ~70%)
+        confidence = float(probs[active_indices].max().item())
     else:
         # Fall back to top-2 predictions regardless of threshold
         top2 = probs.topk(2).indices.tolist()
         labels = [BIGEARTHNET_19_CLASSES[i] for i in top2]
-        confidence = float(probs[top2].mean().item())
+        confidence = float(probs[top2[0]].item())  # use top-1 probability
 
-    return {"labels": labels, "confidence": round(confidence, 4)}
+    return {
+        "labels": labels,
+        "confidence": round(confidence, 4),
+        "top_k": top_k_list,
+        "class_probabilities": all_probs,
+        "image_stats": image_stats,
+    }
 
 
 # ---------------------------------------------------------------------------
