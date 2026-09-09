@@ -130,7 +130,38 @@ def generate_report(
         lines.append("")
         tag_display = conf_tag.replace("_", " ").title()
         lines.append(f"- **Status:** {tag_display}")
-        agreed_str = "Agreed" if vf.get("agreed", False) else "Disagreement"
+
+        # 3 distinct cross-verification states:
+        # 1. Agreed (two signals compared and matched)
+        # 2. Not Cross-Verified / Not Applicable (skipped / no second signal)
+        # 3. Disagreement (two signals compared and conflicted)
+        cross_verif_val = str(
+            vf.get("cross_verification")
+            or trace.get("parameters", {}).get("cross_verification")
+            or vf.get("details", {}).get("cross_verification")
+            or ""
+        ).lower()
+        agreement_status = str(vf.get("agreement_status", "")).lower()
+        reason_lower = reason.lower()
+
+        is_skipped_or_na = (
+            "skipped" in cross_verif_val
+            or cross_verif_val in ("not_applicable", "not_cross_verified", "na", "n/a")
+            or agreement_status in ("not_applicable", "not_cross_verified", "na", "n/a", "skipped")
+            or "cross_verification_skipped" in trace.get("tools_invoked", [])
+            or conf_tag == "experimental_unverified"
+            or vf.get("agreed") is None
+            or "not cross-verified" in reason_lower
+            or "physically inapplicable" in reason_lower
+            or "no deterministic cross-check available" in reason_lower
+        )
+
+        if vf.get("agreed") is True:
+            agreed_str = "Agreed"
+        elif is_skipped_or_na:
+            agreed_str = "Not Cross-Verified"
+        else:
+            agreed_str = "Disagreement"
         lines.append(f"- **Agreement:** {agreed_str}")
         if reason:
             lines.append(f"- **Explanation:** {reason}")

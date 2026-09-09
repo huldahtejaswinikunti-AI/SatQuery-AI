@@ -130,3 +130,46 @@ def test_lunar_scientific_measurement_honesty():
     assert "0.25" in meas_cal["diameter"]
     assert meas_cal["scale_status"] == "calibrated"
 
+
+def test_lunar_report_agreement_is_not_disagreement():
+    """Bug A: ensure skipped cross-verification renders as Not Cross-Verified, NOT Disagreement."""
+    from satquery.pipeline.report_generator import generate_report
+
+    img = (np.random.rand(64, 64) * 255).astype(np.uint8)
+    res = run_lunar_pipeline([img], [{"filename": "test_lunar.png"}], "Analyze crater rims and shadows")
+
+    report = generate_report(
+        trace=res["trace"],
+        phrased_answer=res["answer"],
+        verified_facts=res["verified_facts"],
+    )
+
+    # Assert cross_verification parameter exists in trace
+    assert res["trace"]["parameters"]["cross_verification"] == "skipped_no_deterministic_signal"
+
+    # Assert Agreement is NOT Disagreement
+    assert "- **Agreement:** Disagreement" not in report
+    assert "- **Agreement:** Not Cross-Verified" in report or "- **Agreement:** Not Applicable" in report
+
+
+def test_optical_sar_fusion_executive_summary_complete_sentence():
+    """Bug B: ensure optical_sar_fusion produces complete sentences without raw concatenation or dangling parens."""
+    from satquery.fusion.optical_sar_fusion import format_fusion_summary
+
+    mock_res = {
+        "land_cover_call": "water",
+        "cloud_fraction": 0.746,
+        "fractions": {"water": 0.510, "built_up": 0.200, "vegetation": 0.100},
+    }
+    summary = format_fusion_summary(mock_res)
+
+    # Assert complete sentence structure
+    assert summary.startswith("Optical-SAR fusion detected open water covering 51.0% of the scene.")
+    assert "Optical imagery was 74.6% cloud-obscured" in summary
+    assert "Sentinel-1 SAR backscatter" in summary
+    # Assert no dangling double parenthesis
+    assert not summary.endswith(".)")
+    assert not summary.endswith("))")
+    assert summary.endswith(".")
+    assert "water (" not in summary
+

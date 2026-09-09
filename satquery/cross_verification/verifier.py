@@ -65,6 +65,8 @@ def verify(
             "confidence_tag": "lower_confidence",
             "reason": "Single-Signal Result - Not Cross-Verified: no deterministic cross-check available for this claim.",
             "agreed": False,
+            "agreement_status": "not_cross_verified",
+            "cross_verification": "skipped_no_deterministic_signal",
             "details": {"cause": "missing_deterministic_signal"},
         }
 

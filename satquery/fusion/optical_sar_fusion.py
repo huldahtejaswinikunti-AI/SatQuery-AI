@@ -272,3 +272,84 @@ class OpticalSARFusionEngine:
             modality_weights={"optical": w_opt, "sar": w_sar},
             agreement_score=agree, stated_reasons=reasons, confidence=conf, confidence_level=lvl,
         )
+
+
+def format_fusion_summary(res: dict[str, Any]) -> str:
+    """Format optical-SAR fusion results into a grammatically complete executive summary sentence."""
+    call = res.get("land_cover_call", "mixed")
+    fractions = res.get("fractions", {})
+    cloud_pct = round(float(res.get("cloud_fraction", 0.0)) * 100, 1)
+    water_pct = round(float(fractions.get("water", 0.0)) * 100, 1)
+    built_pct = round(float(fractions.get("built_up", 0.0)) * 100, 1)
+    veg_pct = round(float(fractions.get("vegetation", 0.0)) * 100, 1)
+
+    if call == "water":
+        primary = f"Optical-SAR fusion detected open water covering {water_pct}% of the scene."
+        if cloud_pct >= 50.0:
+            context = (
+                f"Optical imagery was {cloud_pct}% cloud-obscured, so the result relies primarily on "
+                f"Sentinel-1 SAR backscatter, which shows the low specular signature characteristic of open water."
+            )
+        elif cloud_pct >= 15.0:
+            context = (
+                f"With {cloud_pct}% partial cloud cover, optical NDWI reflectance was fused with Sentinel-1 SAR "
+                f"specular reflection to map the water extent through localized cloud gaps."
+            )
+        else:
+            context = (
+                f"Under clear sky conditions ({cloud_pct}% clouds), optical NDWI absorption and Sentinel-1 SAR "
+                f"specular minimums mutually cross-confirm the open water surface."
+            )
+        return f"{primary} {context}"
+
+    elif call == "built-up":
+        primary = f"Optical-SAR fusion detected built-up urban infrastructure covering {built_pct}% of the scene."
+        if cloud_pct >= 50.0:
+            context = (
+                f"Optical imagery was {cloud_pct}% cloud-obscured, so the result relies primarily on "
+                f"Sentinel-1 SAR radar, where strong double-bounce backscatter verifies urban structures through cloud cover."
+            )
+        elif cloud_pct >= 15.0:
+            context = (
+                f"With {cloud_pct}% partial cloud cover, optical built-up indications were fused with Sentinel-1 SAR "
+                f"double-bounce corner reflection across cloud-free and obscured sectors."
+            )
+        else:
+            context = (
+                f"Under clear sky conditions ({cloud_pct}% clouds), optical NDBI signatures strongly align with "
+                f"Sentinel-1 VV/VH radar double-bounce reflections, confirming urban infrastructure."
+            )
+        return f"{primary} {context}"
+
+    elif call == "vegetation":
+        primary = f"Optical-SAR fusion detected dense vegetation covering {veg_pct}% of the scene."
+        if cloud_pct >= 50.0:
+            context = (
+                f"Optical imagery was {cloud_pct}% cloud-obscured; all-weather Sentinel-1 SAR diffuse volume "
+                f"scattering was utilized to delineate canopy structure."
+            )
+        elif cloud_pct >= 15.0:
+            context = (
+                f"With {cloud_pct}% partial cloud cover, high NDVI reflectance was corroborated by Sentinel-1 "
+                f"diffuse SAR volume scattering through localized cloud openings."
+            )
+        else:
+            context = (
+                f"Under clear sky conditions ({cloud_pct}% clouds), high optical NDVI reflectance is corroborated "
+                f"by diffuse Sentinel-1 SAR volume scattering, indicating healthy vegetative canopy."
+            )
+        return f"{primary} {context}"
+
+    else:
+        primary = "Optical-SAR fusion identified a heterogeneous mixed terrain across the scene."
+        if cloud_pct >= 50.0:
+            context = (
+                f"Optical imagery was heavily cloud-obscured ({cloud_pct}%); Sentinel-1 SAR radar reveals "
+                f"diverse backscatter signatures without a single dominant surface type."
+            )
+        else:
+            context = (
+                f"Multispectral indices and SAR backscatter indicate a mosaic of vegetation ({veg_pct}%), "
+                f"built structures ({built_pct}%), and open ground under {cloud_pct}% cloud cover."
+            )
+        return f"{primary} {context}"

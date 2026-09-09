@@ -359,7 +359,7 @@ def run_change_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
 
 def run_fusion(validated_input: ValidatedInput) -> dict[str, Any]:
     """Optical + SAR cloud-penetrating fusion specialist."""
-    from satquery.fusion.optical_sar_fusion import fuse
+    from satquery.fusion.optical_sar_fusion import fuse, format_fusion_summary
     from satquery.perception.cloud_mask import compute_cloud_mask
     from satquery.perception.sar_backscatter import analyze_sar_backscatter
     from satquery.perception.spectral_indices import compute_indices
@@ -383,7 +383,7 @@ def run_fusion(validated_input: ValidatedInput) -> dict[str, Any]:
 
     res = fuse(opt_indices, sar_masks, cloud_mask)
     return {
-        "answer": f"Optical-SAR fusion: {res.get('land_cover_call', 'mixed')} ({res.get('reason', '')})",
+        "answer": format_fusion_summary(res),
         "raw_confidence": float(res.get("confidence", 0.92)),
         "evidence": res.get("builtup_mask") if res.get("builtup_mask") is not None else res.get("water_mask"),
         "source": "optical_sar_fusion",

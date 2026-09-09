@@ -455,7 +455,9 @@ def run_lunar_pipeline(
         "verified_facts": {
             "confidence_tag": "experimental_unverified",
             "reason": "Single-Signal Result — Not Cross-Verified (terrestrial spectral indices are physically inapplicable to lunar regolith).",
-            "agreed": False,
+            "agreed": None,
+            "agreement_status": "not_cross_verified",
+            "cross_verification": "skipped_no_deterministic_signal",
             "measurements": {
                 "diameter": diameter_status,
                 "crater_diameter": diameter_status,
