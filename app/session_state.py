@@ -17,6 +17,9 @@ _DEFAULTS = {
     "query_input": "",
     "query_source": "freetext",   # "freetext" | "preset"
     "demo_preset_index": 0,
+    "analysis_mode": "Earth analysis",  # "Earth analysis" | "Lunar analysis"
+    "batch_queue": [],
+    "batch_results": [],
     "is_running": False,
     "error_message": None,
 }

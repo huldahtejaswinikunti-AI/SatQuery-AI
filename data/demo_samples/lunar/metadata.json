@@ -1,0 +1,39 @@
+{
+  "_comment_mandatory_issdc_acknowledgment": "The data used in this research/work is obtained from the Indian Space Science Data Centre (ISSDC), Indian Space Research Organisation (ISRO), Government of India, through PRADAN portal (https://pradan.issdc.gov.in). Chandrayaan-2 Orbiter High Resolution Camera (OHRC) and Terrain Mapping Camera-2 (TMC-2) data products.",
+  "mission": "Chandrayaan-2",
+  "target_body": "Moon",
+  "instrument_suite": ["OHRC (Orbiter High Resolution Camera)", "TMC-2 (Terrain Mapping Camera 2)"],
+  "provenance": "ISRO / ISSDC PRADAN (pradan.issdc.gov.in)",
+  "samples": [
+    {
+      "id": "lunar_01_crater_boguslawsky",
+      "file": "ch2_ohrc_crater_boguslawsky.png",
+      "label": "Boguslawsky Crater Rim & Floor",
+      "instrument": "Chandrayaan-2 OHRC",
+      "resolution": "0.25 m/pixel",
+      "feature_type": "Impact Crater & Floor Deposits",
+      "coordinates": "72.9° S, 43.3° E",
+      "description": "High-resolution orbital observation of Boguslawsky crater showing steep rim topography, terraced walls, and localized micro-craters on the floor."
+    },
+    {
+      "id": "lunar_02_shackleton_rim_psr",
+      "file": "ch2_ohrc_shackleton_rim_psr.png",
+      "label": "South Pole Shackleton Rim (PSR)",
+      "instrument": "Chandrayaan-2 OHRC",
+      "resolution": "0.32 m/pixel",
+      "feature_type": "Permanently Shadowed Region & Cold Trap",
+      "coordinates": "89.9° S, 0.0° E",
+      "description": "High-contrast polar observation showing sharp sunlit peaks and deep permanently shadowed regions (PSRs) candidate cold-traps for water ice."
+    },
+    {
+      "id": "lunar_03_regolith_ejecta_rays",
+      "file": "ch2_tmc2_regolith_ejecta.png",
+      "label": "Mare Regolith & Fresh Ejecta Rays",
+      "instrument": "Chandrayaan-2 TMC-2",
+      "resolution": "5.0 m/pixel",
+      "feature_type": "Regolith Texture & Impact Ejecta",
+      "coordinates": "18.5° N, 55.2° E",
+      "description": "Multi-spectral stereo observation exhibiting immature high-albedo ejecta ray blankets over basaltic mare regolith."
+    }
+  ]
+}

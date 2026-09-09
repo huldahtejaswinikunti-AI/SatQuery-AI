@@ -87,32 +87,42 @@ def render_image_preview(images: list[np.ndarray], metas: list[dict]) -> None:
 _BADGE_CONFIG = {
     "high_cross_verified": {
         "cls": "badge-high-verified",
-        "icon": "[VERIFIED]",
+        "icon": "✓",
         "label": "High Confidence (Cross-Verified)",
     },
     "high_sar_penetration": {
         "cls": "badge-high-verified",
-        "icon": "[SAR-OK]",
+        "icon": "✓",
         "label": "High Confidence (SAR-Penetrated)",
     },
     "high_rule_based": {
         "cls": "badge-high-rule",
-        "icon": "[SIGNAL]",
+        "icon": "⚡",
         "label": "Deterministic Signal",
     },
     "lower_confidence_disagreement": {
         "cls": "badge-disagreement",
-        "icon": "[!]",
+        "icon": "!",
         "label": "Lower Confidence (Signal Disagreement)",
+    },
+    "lower_confidence": {
+        "cls": "badge-disagreement",
+        "icon": "!",
+        "label": "Lower Confidence",
     },
     "moderate": {
         "cls": "badge-unverified",
-        "icon": "[~]",
+        "icon": "~",
         "label": "Moderate Confidence (Unverified)",
+    },
+    "experimental_unverified": {
+        "cls": "badge-experimental-unverified",
+        "icon": "⊘",
+        "label": "Experimental — No Cross-Check Available",
     },
     "error": {
         "cls": "badge-error",
-        "icon": "[X]",
+        "icon": "✕",
         "label": "Input Validation Error",
     },
 }
@@ -121,15 +131,33 @@ _BADGE_CONFIG = {
 def render_confidence_badge(result: dict[str, Any]) -> None:
     """Render the primary confidence badge with icon + label + percentage."""
     tag = result.get("confidence_tag", "moderate")
-    score = result.get("confidence_score", 0.0)
-    pct = int(round(float(score) * 100))
-
+    score = result.get("confidence_score")
+    
     cfg = _BADGE_CONFIG.get(tag, _BADGE_CONFIG["moderate"])
+
+    if tag == "experimental_unverified":
+        label = f'{cfg["icon"]} {cfg["label"]}'
+        st.markdown(
+            f'<div class="badge-container {cfg["cls"]}" role="status" '
+            f'aria-label="{cfg["label"]}">{label}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="lunar-note-banner">'
+            '<strong>Notice:</strong> Lunar imagery has no deterministic cross-check available in this system — '
+            'treat this answer as unverified.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        return
 
     if tag == "error":
         label = f'{cfg["icon"]} {cfg["label"]}'
-    else:
+    elif score is not None:
+        pct = int(round(float(score) * 100))
         label = f'{cfg["icon"]} {cfg["label"]}: {pct}%'
+    else:
+        label = f'{cfg["icon"]} {cfg["label"]}'
 
     st.markdown(
         f'<div class="badge-container {cfg["cls"]}" role="status" '
@@ -378,10 +406,141 @@ def render_land_cover_table(result: dict[str, Any]) -> None:
 
 
 def render_detailed_report(result: dict[str, Any]) -> None:
-    """Render the full markdown analysis report in an expander."""
+    """Render the full markdown analysis report."""
     report_md = result.get("report_markdown", "")
-    if not report_md:
-        return
-
-    with st.expander("Full Analysis Report", expanded=False):
+    if report_md:
         st.markdown(report_md, unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Minimal Single Consolidated Details Expander (Task 1)
+# ---------------------------------------------------------------------------
+
+
+def render_details_expander(result: dict[str, Any], metas: list[dict] | None = None) -> None:
+    """Single collapsed Details expander holding all secondary technical depth."""
+    with st.expander("Details & Technical Evidence", expanded=False):
+        tab1, tab2, tab3 = st.tabs([
+            "📊 Spectral & Classification",
+            "📑 Full Report & Export",
+            "⚙️ Execution Trace",
+        ])
+
+        with tab1:
+            # Metadata summary
+            if metas:
+                st.markdown("**Image Metadata:**")
+                for idx, m in enumerate(metas, 1):
+                    fn = m.get("filename", f"Image #{idx}")
+                    crs = m.get("crs", "N/A")
+                    shape = m.get("shape", f"{m.get('width', 'N/A')}x{m.get('height', 'N/A')}")
+                    bands = m.get("band_count", m.get("channels", "N/A"))
+                    sensor = m.get("sensor", m.get("modality", "N/A"))
+                    st.markdown(
+                        f"<div class='metadata-mono'>• <strong>{fn}</strong> — "
+                        f"Sensor: {sensor} | Shape: {shape} | Bands: {bands} | CRS: {crs}</div>",
+                        unsafe_allow_html=True,
+                    )
+                st.write("")
+
+            # Spectral summary if available
+            vf = result.get("verified_facts", {})
+            if isinstance(vf, dict) and vf.get("spectral_summary"):
+                spectral = vf["spectral_summary"]
+                ndvi = spectral.get("ndvi_mean", 0)
+                ndwi = spectral.get("ndwi_mean", 0)
+                ndbi = spectral.get("ndbi_mean", 0)
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("NDVI (Vegetation)", f"{ndvi:+.3f}")
+                with c2:
+                    st.metric("NDWI (Water)", f"{ndwi:+.3f}")
+                with c3:
+                    st.metric("NDBI (Built-up)", f"{ndbi:+.3f}")
+
+                veg_f = spectral.get("vegetation_fraction", 0)
+                wat_f = spectral.get("water_fraction", 0)
+                blt_f = spectral.get("built_up_fraction", 0)
+                st.progress(min(veg_f, 1.0), text=f"Vegetation: {veg_f*100:.1f}%")
+                st.progress(min(wat_f, 1.0), text=f"Water: {wat_f*100:.1f}%")
+                st.progress(min(blt_f, 1.0), text=f"Built-up: {blt_f*100:.1f}%")
+                st.write("")
+
+            # Land cover top-k
+            top_k = vf.get("top_k", []) if isinstance(vf, dict) else []
+            if top_k:
+                st.markdown("**Land Cover Surface Classes (ResNet-18 / BigEarthNet):**")
+                for entry in top_k:
+                    name = entry.get("class_name", "Unknown")
+                    prob = entry.get("probability", 0)
+                    st.progress(min(prob, 1.0), text=f"{name}: {prob*100:.1f}%")
+
+            if not (isinstance(vf, dict) and (vf.get("spectral_summary") or vf.get("top_k"))):
+                st.info("No Earth-observation spectral indices or land-cover distribution for this analysis.")
+
+        with tab2:
+            render_detailed_report(result)
+            st.divider()
+            render_download_buttons(result)
+
+        with tab3:
+            trace = result.get("trace", {})
+            if trace:
+                exec_time = trace.get("execution_time_seconds")
+                t_str = f"{exec_time:.2f}s" if exec_time is not None else "N/A"
+                st.markdown(
+                    f"<div class='metadata-mono'>"
+                    f"<strong>Task:</strong> <code>{trace.get('task', 'N/A')}</code> | "
+                    f"<strong>Duration:</strong> <code>{t_str}</code> | "
+                    f"<strong>Confidence:</strong> <code>{trace.get('confidence', 'N/A')}</code>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+                tools = trace.get("tools_invoked", [])
+                if tools:
+                    st.markdown(
+                        "<div class='metadata-mono'><strong>Pipeline tools:</strong> " +
+                        " &rarr; ".join(f"<code>{t}</code>" for t in tools) + "</div>",
+                        unsafe_allow_html=True,
+                    )
+                st.write("")
+                st.json(trace)
+            else:
+                st.info("No execution trace recorded.")
+
+
+# ---------------------------------------------------------------------------
+# Batch Queue Item Component (Task 2)
+# ---------------------------------------------------------------------------
+
+
+def render_batch_item_card(idx: int, item: dict[str, Any]) -> None:
+    """Render a single stacked summary card for a batch item."""
+    status = item.get("status", "queued")
+    query = item.get("query", "")
+    res = item.get("result")
+    err = item.get("error")
+
+    status_cls = f"status-{status}"
+    st.markdown(
+        f"<div class='batch-card'>"
+        f"<div style='display: flex; justify-content: space-between; align-items: center;'>"
+        f"<strong>Item #{idx + 1}</strong>"
+        f"<span class='batch-status-badge {status_cls}'>{status.upper()}</span>"
+        f"</div>"
+        f"<div style='font-size: 0.9rem; color: #94a3b8; margin-top: 4px;'>"
+        f"Query: <em>{query[:80]}{'...' if len(query) > 80 else ''}</em>"
+        f"</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+    if status == "error" and err:
+        st.error(f"Item #{idx + 1} failed: {err}")
+    elif status == "done" and res:
+        with st.expander(f"View Results for Item #{idx + 1}", expanded=False):
+            render_confidence_badge(res)
+            st.markdown(res.get("answer", ""))
+            render_overlay(res)
+            render_details_expander(res, item.get("metas"))
+

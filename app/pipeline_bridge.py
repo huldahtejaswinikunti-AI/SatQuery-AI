@@ -250,3 +250,108 @@ def _error_result(
         "semantic_consistency": None,
         "validation_failure_reason": validation_failure_reason or message,
     }
+
+
+# ---------------------------------------------------------------------------
+# Lunar Pipeline Bridge (Task 3)
+# ---------------------------------------------------------------------------
+
+
+def run_lunar_pipeline(
+    images: list,
+    metas: list[dict] | None = None,
+    query: str = "",
+) -> dict[str, Any]:
+    """Execute the zero-shot Lunar analysis pipeline for Chandrayaan-2 imagery."""
+    m = metas if metas is not None else [{} for _ in images]
+    try:
+        from satquery.lunar.lunar_pipeline import run_lunar_pipeline as _lunar_exec
+        return _lunar_exec(images, m, query)
+    except Exception as exc:
+        logger.exception("Lunar pipeline execution failed")
+        return {
+            "answer": f"Lunar analysis error: {exc}",
+            "overlay": None,
+            "confidence": "experimental_unverified",
+            "confidence_tag": "error",
+            "confidence_score": None,
+            "trace": {},
+            "report_path": None,
+            "report_markdown": "",
+            "verified_facts": {},
+            "validation_failure_reason": str(exc),
+        }
+
+
+# ---------------------------------------------------------------------------
+# Sequential Batch Queue Processor with Error Isolation (Task 2)
+# ---------------------------------------------------------------------------
+
+
+def run_batch_pipeline(
+    items: list[dict[str, Any]],
+    mode: str = "earth",
+    progress_callback: Any = None,
+) -> list[dict[str, Any]]:
+    """Process a queue of input groups sequentially with per-item error isolation.
+
+    Parameters
+    ----------
+    items : list[dict]
+        Each item has keys: 'images' (list), 'metas' (list), 'query' (str).
+    mode : str
+        'earth' or 'lunar'.
+    progress_callback : callable, optional
+        Callback invoked after each item: (idx, total, status, result_dict)
+
+    Returns
+    -------
+    list[dict]
+        Updated items list with 'status' ('done' or 'error') and 'result' or 'error'.
+    """
+    total = len(items)
+    results = []
+
+    for idx, it in enumerate(items):
+        imgs = it.get("images", [])
+        metas = it.get("metas", [])
+        q = it.get("query", "")
+
+        if progress_callback:
+            progress_callback(idx, total, "running", None)
+
+        try:
+            if mode == "lunar":
+                res = run_lunar_pipeline(imgs, metas, q)
+            else:
+                res = run_pipeline(imgs, metas, q)
+
+            if res.get("confidence_tag") == "error":
+                item_rec = {
+                    **it,
+                    "status": "error",
+                    "error": res.get("validation_failure_reason") or res.get("answer", "Unknown error"),
+                    "result": None,
+                }
+            else:
+                item_rec = {
+                    **it,
+                    "status": "done",
+                    "result": res,
+                    "error": None,
+                }
+        except Exception as exc:
+            logger.warning("Batch item #%d failed with exception: %s", idx + 1, exc)
+            item_rec = {
+                **it,
+                "status": "error",
+                "error": str(exc),
+                "result": None,
+            }
+
+        results.append(item_rec)
+        if progress_callback:
+            progress_callback(idx, total, item_rec["status"], item_rec.get("result"))
+
+    return results
+

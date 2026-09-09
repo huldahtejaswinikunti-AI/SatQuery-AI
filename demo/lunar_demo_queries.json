@@ -1,0 +1,29 @@
+[
+  {
+    "id": "lunar_query_01",
+    "label": "1. Impact Crater & Terraced Rim Analysis (Boguslawsky)",
+    "task": "lunar_vqa",
+    "file": "ch2_ohrc_crater_boguslawsky.png",
+    "query": "Identify the prominent impact crater rims and evaluate the terraced wall slope features.",
+    "expected_badge": "Experimental — No Cross-Check Available",
+    "why_it_matters": "Critical for Artemis/Chandrayaan landing site hazard avoidance, characterizing boulder distribution and steep slope hazards."
+  },
+  {
+    "id": "lunar_query_02",
+    "label": "2. Permanently Shadowed Region (PSR) Detection (Shackleton Rim)",
+    "task": "lunar_vqa",
+    "file": "ch2_ohrc_shackleton_rim_psr.png",
+    "query": "Detect deep shadowed pockets and candidate permanently shadowed cold-traps for volatiles.",
+    "expected_badge": "Experimental — No Cross-Check Available",
+    "why_it_matters": "Assists ISRO and international science teams in mapping volatile cold-traps and lunar south pole water-ice reservoirs."
+  },
+  {
+    "id": "lunar_query_03",
+    "label": "3. Regolith Texture & Immature Ejecta Rays",
+    "task": "lunar_vqa",
+    "file": "ch2_tmc2_regolith_ejecta.png",
+    "query": "Characterize the regolith grain texture and map the radial ejecta ray distribution.",
+    "expected_badge": "Experimental — No Cross-Check Available",
+    "why_it_matters": "Determines surface maturity, space weathering extent, and trafficability for lunar roving vehicles."
+  }
+]
