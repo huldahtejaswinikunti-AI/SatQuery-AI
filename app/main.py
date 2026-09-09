@@ -1,11 +1,12 @@
 """SatQuery AI -- Streamlit main entry point.
 
-Redesigned minimal, focused interface supporting:
-- Earth Observation Analysis (Sentinel-1/2, Land Cover, Optical+SAR Fusion, Change Detection)
-- Chandrayaan-2 Lunar Analysis (Zero-shot VQA, Crater Morphology, PSR Shadow Analysis)
-- Multi-Input / Batch Queuing with Sequential Execution & Error Isolation
-- Minimal clutter: Answer, Confidence Badge, and Overlay on top; deep technical metrics
-  tucked neatly into a single collapsed "Details" expander.
+Redesigned minimal, high-contrast interface with:
+- Top-level Domain Navigation (Earth analysis vs Lunar analysis)
+- Multiple Curated Picture Options per mode
+- Visual grouping using bordered card containers (no black-on-black floating elements)
+- Balanced layout without empty gray voids
+- High-contrast primary call-to-action buttons (#2dd4bf filled teal)
+- Clean result section with single collapsed Details expander
 """
 from __future__ import annotations
 
@@ -101,33 +102,7 @@ def _load_json_catalog(path: Path) -> list[dict]:
 earth_presets = _load_json_catalog(EARTH_QUERIES_PATH)
 lunar_presets = _load_json_catalog(LUNAR_QUERIES_PATH)
 
-# ---- Top-level Header ---------------------------------------------------
-render_header()
-
-# ---- Task 1 & 3: Obvious Top-level Mode Selector ------------------------
-top_col1, top_col2, top_col3 = st.columns([2, 1, 1])
-
-with top_col1:
-    mode = st.radio(
-        "Observation Domain:",
-        options=["Earth analysis", "Lunar analysis"],
-        horizontal=True,
-        key="top_mode_select",
-        help="Select between Earth land-cover cross-verification and Chandrayaan-2 lunar exploration.",
-    )
-    st.session_state.analysis_mode = mode
-
-with top_col3:
-    flow_type = st.radio(
-        "Workflow:",
-        options=["Single Analysis", "Batch Queue"],
-        horizontal=True,
-        key="flow_type_select",
-    )
-
-st.divider()
-
-# Helper to load demo image files
+# Helper to resolve demo images
 def _resolve_image_files(filenames: list[str], is_lunar: bool = False) -> tuple[list[np.ndarray], list[dict]]:
     imgs, metas = [], []
     base = DEMO_BASE / "lunar" if is_lunar else DEMO_BASE
@@ -138,7 +113,6 @@ def _resolve_image_files(filenames: list[str], is_lunar: bool = False) -> tuple[
             imgs.append(arr)
             metas.append(meta)
             continue
-        # Fallback search across subdirectories
         base_name = Path(fname).name
         for subdir in ["", "single_optical", "single_sar", "optical_sar_pairs", "bitemporal_pairs", "lunar"]:
             candidate = DEMO_BASE / subdir / base_name
@@ -150,243 +124,294 @@ def _resolve_image_files(filenames: list[str], is_lunar: bool = False) -> tuple[
     return imgs, metas
 
 
-# ---- Picture Selection & Input Configuration ----------------------------
+# ---- Header -------------------------------------------------------------
+render_header()
+
+# ---- Container 1: Domain Navigation & Workflow Control ------------------
+with st.container(border=True):
+    col_nav1, col_nav2 = st.columns([3, 2])
+    with col_nav1:
+        mode = st.radio(
+            "Observation Domain:",
+            options=["Earth analysis", "Lunar analysis"],
+            horizontal=True,
+            key="domain_select",
+            help="Switch between Earth land-cover cross-verification and Chandrayaan-2 lunar exploration.",
+        )
+        st.session_state.analysis_mode = mode
+    with col_nav2:
+        flow_type = st.radio(
+            "Workflow:",
+            options=["Single Analysis", "Batch Queue"],
+            horizontal=True,
+            key="workflow_select",
+        )
+
+# ---- Container 2: Scenario & Picture Options Picker ---------------------
 current_images = []
 current_metas = []
 default_query = ""
 
-if mode == "Earth analysis":
-    st.markdown("### Select Earth Observation Imagery")
-    earth_tabs = ["Curated Scenarios", "Custom Upload"]
-    chosen_tab = st.radio("Input Source:", earth_tabs, horizontal=True, label_visibility="collapsed")
-
-    if chosen_tab == "Curated Scenarios":
-        # Group presets by type to give options across modes
-        scenario_labels = [f"{i+1}. {p.get('label', p.get('query', '')[:50])}" for i, p in enumerate(earth_presets)]
-        scenario_idx = st.selectbox(
-            "Select Curated Demo Scene:",
-            range(len(scenario_labels)),
-            format_func=lambda i: scenario_labels[i],
-            index=0,
-            key="earth_preset_select",
+with st.container(border=True):
+    if mode == "Earth analysis":
+        st.markdown("#### 🌍 Earth Observation Scenario & Picture Selection")
+        earth_tab_names = ["Curated Scenarios", "Custom Image Upload"]
+        chosen_earth_source = st.radio(
+            "Source Mode:",
+            earth_tab_names,
+            horizontal=True,
+            label_visibility="collapsed",
+            key="earth_source_radio",
         )
-        selected_preset = earth_presets[scenario_idx]
-        default_query = selected_preset.get("query", "")
-        f_list = selected_preset.get("sample_files") or selected_preset.get("files") or []
-        current_images, current_metas = _resolve_image_files(f_list, is_lunar=False)
-        st.caption(f"**Why this matters to ISRO:** {selected_preset.get('why_this_matters_to_isro', 'Standard remote sensing workflow.')}")
+
+        if chosen_earth_source == "Curated Scenarios":
+            # Multiple options presentation with rich context
+            options_labels = [
+                f"{i+1}. {p.get('label', p.get('query', '')[:50])}"
+                for i, p in enumerate(earth_presets)
+            ]
+            selected_idx = st.selectbox(
+                "Choose Picture Scenario to Analyze:",
+                range(len(options_labels)),
+                format_func=lambda i: options_labels[i],
+                index=0,
+                key="earth_scenario_dropdown",
+            )
+            selected_preset = earth_presets[selected_idx]
+            default_query = selected_preset.get("query", "")
+            f_list = selected_preset.get("sample_files") or selected_preset.get("files") or []
+            current_images, current_metas = _resolve_image_files(f_list, is_lunar=False)
+
+            # Auto-update query box when preset changes
+            if st.session_state.get("last_earth_preset_idx") != selected_idx:
+                st.session_state["last_earth_preset_idx"] = selected_idx
+                st.session_state["main_query_text_area"] = default_query
+
+            task_type = selected_preset.get("task", "Remote Sensing Analysis")
+            why_isro = selected_preset.get("why_this_matters_to_isro", "Operational satellite evaluation.")
+            st.caption(f"**Task Type:** `{task_type}` | **ISRO/SAC Context:** {why_isro}")
+
+        else:
+            st.markdown(
+                "Upload 1 single optical/SAR image, or 2 paired images for **Optical+SAR Fusion** or **Change Detection**.  \n"
+                "*Supported formats: GeoTIFF, TIFF, PNG, JPEG*"
+            )
+            uploaded_files = st.file_uploader(
+                "Upload Earth Images",
+                type=["tif", "tiff", "png", "jpg", "jpeg"],
+                accept_multiple_files=True,
+                label_visibility="collapsed",
+                key="earth_custom_uploader",
+            )
+            if uploaded_files:
+                for f in uploaded_files[:2]:
+                    arr, meta = load_image_as_array(f)
+                    current_images.append(arr)
+                    current_metas.append(meta)
+            default_query = "Describe the land-cover surface features and assess terrain composition."
 
     else:
-        st.markdown(
-            "**Upload Imagery** (1 single image, or 2 paired images for Optical+SAR / Bi-Temporal Change Detection).  \n"
-            "*Supported formats: GeoTIFF / TIFF / PNG / JPEG*"
-        )
-        uploaded = st.file_uploader(
-            "Upload Earth Images",
-            type=["tif", "tiff", "png", "jpg", "jpeg"],
-            accept_multiple_files=True,
+        st.markdown("#### 🌕 Chandrayaan-2 Lunar Surface Imagery (OHRC / TMC-2)")
+        lunar_tab_names = ["Curated Chandrayaan-2 Targets", "Custom Lunar Product Upload"]
+        chosen_lunar_source = st.radio(
+            "Lunar Source:",
+            lunar_tab_names,
+            horizontal=True,
             label_visibility="collapsed",
-            key="earth_uploader",
+            key="lunar_source_radio",
         )
-        if uploaded:
-            for f in uploaded[:2]:
-                arr, meta = load_image_as_array(f)
-                current_images.append(arr)
-                current_metas.append(meta)
-        default_query = "Describe the land-cover surface features and assess terrain composition."
 
-else:
-    # Lunar Analysis Mode
-    st.markdown("### Chandrayaan-2 Lunar Surface Imagery (OHRC / TMC-2)")
-    lunar_tabs = ["Chandrayaan-2 Demo Targets", "Custom Lunar Upload"]
-    chosen_lunar_tab = st.radio("Input Source:", lunar_tabs, horizontal=True, label_visibility="collapsed")
+        if chosen_lunar_source == "Curated Chandrayaan-2 Targets":
+            lunar_options = [
+                f"{i+1}. {p.get('label', p.get('query', '')[:50])}"
+                for i, p in enumerate(lunar_presets)
+            ]
+            selected_lunar_idx = st.selectbox(
+                "Choose Chandrayaan-2 Picture Option:",
+                range(len(lunar_options)),
+                format_func=lambda i: lunar_options[i],
+                index=0,
+                key="lunar_scenario_dropdown",
+            )
+            selected_lunar = lunar_presets[selected_lunar_idx]
+            default_query = selected_lunar.get("query", "")
+            l_files = [selected_lunar["file"]] if "file" in selected_lunar else []
+            current_images, current_metas = _resolve_image_files(l_files, is_lunar=True)
 
-    if chosen_lunar_tab == "Chandrayaan-2 Demo Targets":
-        lunar_labels = [f"{i+1}. {p.get('label', p.get('query', '')[:50])}" for i, p in enumerate(lunar_presets)]
-        lunar_idx = st.selectbox(
-            "Select Lunar Target Feature:",
-            range(len(lunar_labels)),
-            format_func=lambda i: lunar_labels[i],
-            index=0,
-            key="lunar_preset_select",
-        )
-        selected_lunar = lunar_presets[lunar_idx]
-        default_query = selected_lunar.get("query", "")
-        l_files = [selected_lunar["file"]] if "file" in selected_lunar else []
-        current_images, current_metas = _resolve_image_files(l_files, is_lunar=True)
-        st.caption(f"**ISRO / ISSDC Context:** {selected_lunar.get('why_it_matters', 'Chandrayaan-2 mission science exploration.')}")
+            # Auto-update query box when lunar preset changes
+            if st.session_state.get("last_lunar_preset_idx") != selected_lunar_idx:
+                st.session_state["last_lunar_preset_idx"] = selected_lunar_idx
+                st.session_state["main_query_text_area"] = default_query
 
-    else:
-        st.markdown(
-            "**Upload Lunar Raster Product** (Chandrayaan-2 OHRC/TMC-2 GeoTIFF, TIFF, or PNG)."
-        )
-        lunar_uploaded = st.file_uploader(
-            "Upload Lunar Product",
-            type=["tif", "tiff", "png", "jpg", "jpeg"],
-            accept_multiple_files=False,
-            label_visibility="collapsed",
-            key="lunar_uploader",
-        )
-        if lunar_uploaded:
-            arr, meta = load_image_as_array(lunar_uploaded)
-            current_images = [arr]
-            current_metas = [meta]
-        default_query = "Identify prominent impact craters, ejecta deposits, and shadowed regions."
+            st.caption(f"**ISRO / ISSDC Context:** {selected_lunar.get('why_it_matters', 'Lunar exploration.')}")
 
-# Update active images in session state
+        else:
+            st.markdown(
+                "Upload calibrated Chandrayaan-2 OHRC/TMC-2 raster product (.tif, .png, or converted .IMG)."
+            )
+            lunar_upload = st.file_uploader(
+                "Upload Lunar Raster",
+                type=["tif", "tiff", "png", "jpg", "jpeg"],
+                accept_multiple_files=False,
+                label_visibility="collapsed",
+                key="lunar_custom_uploader",
+            )
+            if lunar_upload:
+                arr, meta = load_image_as_array(lunar_upload)
+                current_images = [arr]
+                current_metas = [meta]
+            default_query = "Identify prominent impact craters, ejecta deposits, and shadowed regions."
+
+# Sync active images in session state
 st.session_state.images = current_images
 st.session_state.metas = current_metas
 
-st.write("")
-
-# ---- Batch Queue Mode (Task 2) ------------------------------------------
+# ---- Batch Queue Mode ---------------------------------------------------
 if flow_type == "Batch Queue":
-    st.subheader("Batch Queue Management")
-    st.markdown(
-        "Queue several independent valid input-groups to process sequentially. "
-        "Each item runs with isolated error handling so one invalid upload will never block the rest."
-    )
-
-    col_q1, col_q2 = st.columns([3, 1])
-    with col_q1:
-        batch_query = st.text_input(
-            "Query for this item (or leave blank to use default):",
-            value=default_query,
-            key="batch_item_query_input",
+    with st.container(border=True):
+        st.markdown("#### 📋 Sequential Batch Queue")
+        st.markdown(
+            "Stage multiple independent inputs to process in sequence with per-item error isolation."
         )
-    with col_q2:
-        st.write("")
-        st.write("")
-        if st.button("➕ Add Current Selection to Queue", use_container_width=True):
-            if not st.session_state.images:
-                st.warning("Please select or upload image(s) before adding to batch.")
-            else:
-                st.session_state.batch_queue.append({
-                    "images": list(st.session_state.images),
-                    "metas": list(st.session_state.metas),
-                    "query": batch_query.strip() or default_query,
-                    "status": "queued",
-                    "result": None,
-                    "error": None,
-                })
-                st.success(f"Added item #{len(st.session_state.batch_queue)} to batch queue.")
+
+        col_bq1, col_bq2 = st.columns([3, 1])
+        with col_bq1:
+            batch_item_query = st.text_input(
+                "Query for staged item (or leave default):",
+                value=default_query,
+                key="batch_staged_query",
+            )
+        with col_bq2:
+            st.write("")
+            st.write("")
+            if st.button("➕ Stage to Queue", use_container_width=True):
+                if not st.session_state.images:
+                    st.warning("Select or upload image(s) before staging to queue.")
+                else:
+                    st.session_state.batch_queue.append({
+                        "images": list(st.session_state.images),
+                        "metas": list(st.session_state.metas),
+                        "query": batch_item_query.strip() or default_query,
+                        "status": "queued",
+                        "result": None,
+                        "error": None,
+                    })
+                    st.success(f"Staged Item #{len(st.session_state.batch_queue)} to batch queue.")
+                    st.rerun()
+
+        queue_len = len(st.session_state.batch_queue)
+        st.markdown(f"**Queued Items ({queue_len}):**")
+
+        if queue_len == 0:
+            st.info("The queue is empty. Click 'Stage to Queue' above to add items.")
+        else:
+            for q_idx, item in enumerate(st.session_state.batch_queue):
+                render_batch_item_card(q_idx, item)
+
+            col_btn1, col_btn2 = st.columns([2, 1])
+            with col_btn1:
+                run_all_batch = st.button(
+                    f"🚀 Execute Batch Queue ({queue_len} items)",
+                    type="primary",
+                    use_container_width=True,
+                    key="run_all_batch_btn",
+                )
+            with col_btn2:
+                if st.button("🗑️ Clear Queue", use_container_width=True, key="clear_batch_btn"):
+                    st.session_state.batch_queue = []
+                    st.rerun()
+
+            if run_all_batch:
+                p_bar = st.progress(0, text="Executing batch queue...")
+                active_mode = "lunar" if mode == "Lunar analysis" else "earth"
+
+                def _prog_update(idx, total, status, res):
+                    frac = (idx + 1) / total
+                    p_bar.progress(frac, text=f"Processing item {idx + 1} of {total} ({status})...")
+
+                with st.spinner("Processing batch items sequentially..."):
+                    updated = run_batch_pipeline(
+                        st.session_state.batch_queue,
+                        mode=active_mode,
+                        progress_callback=_prog_update,
+                    )
+                    st.session_state.batch_queue = updated
+
+                p_bar.progress(1.0, text="Batch execution finished!")
+                st.success(f"Processed {queue_len} items. Results are ready above.")
                 st.rerun()
 
-    # Show current queue status
-    queue_len = len(st.session_state.batch_queue)
-    st.markdown(f"**Queued Items ({queue_len}):**")
+# ---- Single Analysis Layout (Balanced Two-Column Card) ------------------
+else:
+    with st.container(border=True):
+        st.markdown("#### 🖼️ Visual Input & Analysis Query")
+        col_img, col_act = st.columns([1, 1], gap="medium")
 
-    if queue_len == 0:
-        st.info("The batch queue is currently empty. Use 'Add Current Selection to Queue' above to stage items.")
-    else:
-        for q_idx, it in enumerate(st.session_state.batch_queue):
-            render_batch_item_card(q_idx, it)
+        with col_img:
+            render_image_preview(st.session_state.images, st.session_state.metas)
 
-        c_run1, c_run2 = st.columns([2, 1])
-        with c_run1:
-            run_batch_btn = st.button(
-                f"🚀 Process Entire Batch ({queue_len} items)",
+        with col_act:
+            st.markdown("**Natural Language Query:**")
+            active_query = st.text_area(
+                "Query Prompt:",
+                value=default_query,
+                height=95,
+                label_visibility="collapsed",
+                key="main_query_text_area",
+            )
+
+            st.write("")
+            run_analysis_btn = st.button(
+                "🚀 Run SatQuery AI Analysis",
                 type="primary",
                 use_container_width=True,
+                key="run_single_analysis_btn",
             )
-        with c_run2:
-            if st.button("🗑️ Clear Batch Queue", use_container_width=True):
-                st.session_state.batch_queue = []
-                st.rerun()
 
-        if run_batch_btn:
-            progress_bar = st.progress(0, text="Starting sequential batch run...")
-            status_text = st.empty()
+            if run_analysis_btn:
+                if not st.session_state.images:
+                    st.error("Please select or upload at least one image.")
+                elif not active_query.strip():
+                    st.error("Please enter a question or query.")
+                else:
+                    with st.spinner("Executing analysis pipeline & cross-verification..."):
+                        if mode == "Lunar analysis":
+                            result = run_lunar_pipeline(
+                                st.session_state.images,
+                                st.session_state.metas,
+                                active_query,
+                            )
+                        else:
+                            result = run_pipeline(
+                                st.session_state.images,
+                                st.session_state.metas,
+                                active_query,
+                            )
 
-            def _batch_progress(idx, total, status, res):
-                frac = (idx + 1) / total
-                progress_bar.progress(frac, text=f"Processing item {idx + 1} of {total} ({status})...")
-                status_text.caption(f"Currently processing item #{idx + 1} ({status})")
+                        if result.get("confidence_tag") == "error":
+                            err_reason = result.get("validation_failure_reason") or result.get("answer", "Unknown error")
+                            st.error(f"Analysis failed: {err_reason}")
+                            store_error(err_reason)
+                        else:
+                            store_result(result)
 
-            current_mode = "lunar" if mode == "Lunar analysis" else "earth"
-            with st.spinner("Processing batch queue sequentially..."):
-                updated_queue = run_batch_pipeline(
-                    st.session_state.batch_queue,
-                    mode=current_mode,
-                    progress_callback=_batch_progress,
-                )
-                st.session_state.batch_queue = updated_queue
-
-            progress_bar.progress(1.0, text="Batch processing complete!")
-            st.success(f"Processed {queue_len} batch items. Results are displayed above.")
-            st.rerun()
-
-# ---- Single Analysis Minimal Flow (Task 1 & Task 3) --------------------
-else:
-    # Single clear vertical flow: Image Preview -> Query -> Run -> Result -> Collapsed Details
-    col_preview, col_query = st.columns([1, 1], gap="medium")
-
-    with col_preview:
-        render_image_preview(st.session_state.images, st.session_state.metas)
-
-    with col_query:
-        st.markdown("**Natural Language Query:**")
-        query_text = st.text_area(
-            "Query:",
-            value=default_query,
-            height=90,
-            label_visibility="collapsed",
-            key="single_query_input",
-        )
-
-        run_single_btn = st.button(
-            "🚀 Run SatQuery AI Analysis",
-            type="primary",
-            use_container_width=True,
-        )
-
-        if run_single_btn:
-            if not st.session_state.images:
-                st.error("Please provide at least one satellite or lunar image before running analysis.")
-            elif not query_text.strip():
-                st.error("Please enter a query about the image.")
-            else:
-                with st.spinner("Executing analysis pipeline..."):
-                    if mode == "Lunar analysis":
-                        res = run_lunar_pipeline(
-                            st.session_state.images,
-                            st.session_state.metas,
-                            query_text,
-                        )
-                    else:
-                        res = run_pipeline(
-                            st.session_state.images,
-                            st.session_state.metas,
-                            query_text,
-                        )
-
-                    if res.get("confidence_tag") == "error":
-                        reason = res.get("validation_failure_reason", "") or res.get("answer", "Unknown error")
-                        st.error(f"Analysis could not proceed: {reason}")
-                        store_error(reason)
-                    else:
-                        store_result(res)
-
-    # ---- Result Section (Minimal, zero clutter) -------------------------
+    # ---- Results Section (Only renders when results exist) --------------
     if st.session_state.pipeline_result:
         res = st.session_state.pipeline_result
-        st.divider()
-        st.markdown("### Analysis Result")
+        with st.container(border=True):
+            st.markdown("### 🎯 Analysis Results")
 
-        # 1. Confidence Badge
-        render_confidence_badge(res)
+            # 1. Primary Confidence Badge
+            render_confidence_badge(res)
 
-        # 2. Plain Language Answer
-        st.markdown(res.get("answer", ""))
+            # 2. Grounded Natural-Language Answer
+            st.markdown(res.get("answer", "No textual synthesis generated."))
 
-        # 3. Visual Overlay (if present)
-        render_overlay(res)
+            # 3. Visual Overlay Segmentation / Change Mask
+            render_overlay(res)
 
-        # 4. Single Collapsed Details Expander (Task 1: All secondary depth in ONE expander)
-        render_details_expander(res, st.session_state.metas)
+            # 4. Single Collapsed Details Expander (Zero Clutter)
+            render_details_expander(res, st.session_state.metas)
 
     elif st.session_state.error_message:
         st.error(st.session_state.error_message)
-
-    else:
-        st.info("Select an image preset or upload imagery above, enter your question, and click **Run SatQuery AI Analysis**.")
