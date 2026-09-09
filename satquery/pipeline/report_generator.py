@@ -64,7 +64,7 @@ def generate_report(
 
         ndvi = spectral.get("ndvi_mean", 0)
         ndwi = spectral.get("ndwi_mean", 0)
-        ndbi = spectral.get("ndbi_mean", 0)
+        ndbi = spectral.get("ndbi_mean")
 
         ndvi_interp = interpret_ndvi(ndvi)
         lines.append(f"| **NDVI** (Vegetation) | `{ndvi:+.4f}` | {ndvi_interp} |")
@@ -72,14 +72,17 @@ def generate_report(
         ndwi_interp = interpret_ndwi(ndwi)
         lines.append(f"| **NDWI** (Water) | `{ndwi:+.4f}` | {ndwi_interp} |")
 
-        ndbi_interp = interpret_ndbi(ndbi)
-        lines.append(f"| **NDBI** (Built-up) | `{ndbi:+.4f}` | {ndbi_interp} |")
+        if ndbi is not None:
+            ndbi_interp = interpret_ndbi(ndbi)
+            lines.append(f"| **NDBI** (Built-up) | `{ndbi:+.4f}` | {ndbi_interp} |")
+        else:
+            lines.append("| **NDBI** (Built-up) | *Unavailable* | Requires physical SWIR band (not present in RGB/4-band input) |")
         lines.append("")
 
         veg_f = spectral.get("vegetation_fraction", 0)
         wat_f = spectral.get("water_fraction", 0)
-        blt_f = spectral.get("built_up_fraction", 0)
-        other_f = max(0, 1.0 - veg_f - wat_f - blt_f)
+        blt_f = spectral.get("built_up_fraction")
+        other_f = max(0, 1.0 - veg_f - wat_f - (blt_f if blt_f is not None else 0.0))
 
         lines.append("### Scene Composition")
         lines.append("")
@@ -87,7 +90,10 @@ def generate_report(
         lines.append("|-----------|----------|")
         lines.append(f"| Vegetation | {veg_f*100:.1f}% |")
         lines.append(f"| Water Bodies | {wat_f*100:.1f}% |")
-        lines.append(f"| Built-up Areas | {blt_f*100:.1f}% |")
+        if blt_f is not None:
+            lines.append(f"| Built-up Areas | {blt_f*100:.1f}% |")
+        else:
+            lines.append("| Built-up Areas | *Unavailable (requires SWIR)* |")
         lines.append(f"| Other / Unclassified | {other_f*100:.1f}% |")
         lines.append("")
 

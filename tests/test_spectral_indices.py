@@ -107,3 +107,51 @@ def test_backward_compat_compute_spectral_indices():
     assert np.mean(res.ndvi) > 0.7
     assert res.vegetation_fraction > 0.9
     assert res.water_fraction == 0.0
+
+
+def test_ndbi_not_equal_to_ndwi_when_bands_differ():
+    """Assert NDBI != NDWI for inputs where Green and SWIR bands differ."""
+    h, w = 8, 8
+    # Distinct band values:
+    red = np.full((h, w), 0.15, dtype=np.float32)
+    green = np.full((h, w), 0.25, dtype=np.float32)
+    nir = np.full((h, w), 0.50, dtype=np.float32)
+    swir = np.full((h, w), 0.70, dtype=np.float32)  # SWIR != Green
+
+    bands = {"red": red, "green": green, "nir": nir, "swir": swir}
+    indices = compute_indices(bands)
+
+    # NDWI = (0.25 - 0.50) / (0.25 + 0.50) = -0.25 / 0.75 = -0.3333
+    # NDBI = (0.70 - 0.50) / (0.70 + 0.50) = +0.20 / 1.20 = +0.1667
+    assert not np.allclose(indices["ndbi"], indices["ndwi"])
+    assert np.all(indices["ndbi"] > 0)
+    assert np.all(indices["ndwi"] < 0)
+
+
+def test_ndbi_unavailable_when_swir_missing():
+    """Confirm NDBI is explicitly marked unavailable (None, not defaulted/aliased) when SWIR is missing."""
+    # 1. 3-band RGB input
+    rgb_arr = np.random.randint(0, 255, (32, 32, 3), dtype=np.uint8)
+    res_rgb = compute_spectral_indices(rgb_arr)
+    assert res_rgb.ndbi is None
+    assert res_rgb.built_up_mask is None
+    assert res_rgb.built_up_fraction is None
+
+    # 2. 4-band RGB-NIR input
+    rgba_arr = np.random.randint(0, 255, (32, 32, 4), dtype=np.uint8)
+    res_4band = compute_spectral_indices(rgba_arr)
+    assert res_4band.ndbi is None
+    assert res_4band.built_up_mask is None
+    assert res_4band.built_up_fraction is None
+
+    # 3. compute_indices dictionary without 'swir' key
+    bands_no_swir = {
+        "red": np.ones((4, 4), dtype=np.float32) * 0.2,
+        "green": np.ones((4, 4), dtype=np.float32) * 0.3,
+        "nir": np.ones((4, 4), dtype=np.float32) * 0.7,
+    }
+    idx = compute_indices(bands_no_swir)
+    assert idx["ndbi"] is None
+    assert idx["ndvi"] is not None
+    assert idx["ndwi"] is not None
+

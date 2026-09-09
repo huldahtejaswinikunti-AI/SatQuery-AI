@@ -13,7 +13,11 @@ class VerificationResult:
     explanation: str
 
 
-def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | None = None) -> dict[str, Any]:
+def verify(
+    vlm_claim: dict[str, Any],
+    deterministic_signal: dict[str, Any] | None = None,
+    has_sar: bool = False,
+) -> dict[str, Any]:
     """
     Cross-verifies a Vision-Language Model (VLM) claim against physical, deterministic
     sensor observations (Sentinel-2 spectral indices and Sentinel-1 SAR backscatter).
@@ -35,7 +39,8 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
         deterministic_signal: Matching spectral/SAR output dictionary for the same concept, or None.
             Can contain:
             - "water_fraction", "vegetation_fraction", "built_up_fraction" / "builtup_fraction"
-            - "land_cover_call", "iou", "water_mask", "builtup_mask", etc.
+            - "land_cover_call", "iou", "water_mask", "builtup_mask", "top_class", "top_k", etc.
+        has_sar: bool indicating whether SAR imagery was actually loaded/processed in this task.
 
     Returns:
         dict with:
@@ -58,13 +63,27 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
     if deterministic_signal is None or len(deterministic_signal) == 0:
         return {
             "confidence_tag": "lower_confidence",
-            "reason": "no deterministic cross-check available for this claim.",
+            "reason": "Single-Signal Result - Not Cross-Verified: no deterministic cross-check available for this claim.",
             "agreed": False,
             "details": {"cause": "missing_deterministic_signal"},
         }
 
     claim_text = str(vlm_claim.get("answer", "")).lower()
     target_entity = str(vlm_claim.get("target", "")).lower()
+
+    # Sensor source gating
+    is_sar_active = has_sar or bool(deterministic_signal.get("has_sar", False))
+    water_sensor_label = "NDWI/SAR water masks" if is_sar_active else "NDWI optical reflectance water mask"
+    water_meas_label = "physical NDWI and SAR radar" if is_sar_active else "calibrated NDWI spectral reflectance"
+    built_sensor_label = "Sentinel-1 radar backscatter and NDBI" if is_sar_active else "calibrated NDBI reflectance"
+    built_meas_label = "physical SAR radar and NDBI" if is_sar_active else "optical NDBI reflectance"
+
+    # Extract top predicted class if available for conflict checks
+    top_class = str(deterministic_signal.get("top_class", "")).lower()
+    if not top_class:
+        top_k = deterministic_signal.get("top_k") or vlm_claim.get("top_k", [])
+        if top_k and isinstance(top_k, list) and len(top_k) > 0:
+            top_class = str(top_k[0].get("class_name", "")).lower()
 
     # Spatial Grounding IoU Verification Pathway
     if "iou" in deterministic_signal:
@@ -105,21 +124,38 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
         )
         det_call = deterministic_signal.get("land_cover_call", "").lower()
         det_present = (water_frac >= 0.02) or (det_call == "water") or bool(deterministic_signal.get("water", False))
+        water_pct = round(water_frac * 100, 1)
+
+        # Conflict check: If deterministic water is dominant (>= 40%), but classifier top class is dry land
+        dry_land_indicators = ["arable", "farmland", "crop", "agriculture", "forest", "urban", "desert", "residential", "meadow", "grassland"]
+        is_dry_land_top = any(ind in top_class for ind in dry_land_indicators)
+        is_water_top = any(w in top_class for w in ["water", "river", "lake", "ocean", "wetland", "flood"])
+
+        if water_frac >= 0.40 and is_dry_land_top and not is_water_top:
+            return {
+                "confidence_tag": "lower_confidence",
+                "reason": f"Disagreement / Conflict: Dominant land cover classified as '{top_class}', but calibrated {water_sensor_label} measures {water_pct}% water coverage.",
+                "agreed": False,
+                "details": {
+                    "concept": "water",
+                    "water_fraction": water_frac,
+                    "top_classifier_class": top_class,
+                    "conflict": "water_dominant_vs_dry_classification",
+                },
+            }
 
         if is_claiming_present == det_present:
-            water_pct = round(water_frac * 100, 1)
             return {
                 "confidence_tag": "high_cross_verified",
-                "reason": f"Cross-verified with NDWI/SAR water masks: physical sensors confirm water presence status (measured water coverage: {water_pct}%).",
+                "reason": f"Cross-verified with {water_sensor_label}: physical sensors confirm water presence status (measured water coverage: {water_pct}%).",
                 "agreed": True,
                 "details": {"concept": "water", "water_fraction": water_frac, "vlm_claims_present": is_claiming_present},
             }
         else:
-            water_pct = round(water_frac * 100, 1)
             vlm_state = "present" if is_claiming_present else "absent"
             return {
                 "confidence_tag": "lower_confidence",
-                "reason": f"Disagreement: VLM claims water is {vlm_state}, but physical NDWI and SAR radar measure {water_pct}% water coverage.",
+                "reason": f"Disagreement: VLM claims water is {vlm_state}, but {water_meas_label} measures {water_pct}% water coverage.",
                 "agreed": False,
                 "details": {"concept": "water", "water_fraction": water_frac, "vlm_claims_present": is_claiming_present},
             }
@@ -153,11 +189,14 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
 
     # Concept: Built-up / Urban settlements
     if any(k in claim_text or k in target_entity for k in ["built-up", "building", "urban", "city", "structure", "infrastructure", "settlement"]):
-        built_frac = float(
+        built_val = (
             deterministic_signal.get("built_up_fraction")
-            or deterministic_signal.get("builtup_fraction")
-            or deterministic_signal.get("fractions", {}).get("built_up", 0.0)
+            if deterministic_signal.get("built_up_fraction") is not None
+            else deterministic_signal.get("builtup_fraction")
         )
+        if built_val is None:
+            built_val = deterministic_signal.get("fractions", {}).get("built_up", 0.0)
+        built_frac = float(built_val) if built_val is not None else 0.0
         det_call = deterministic_signal.get("land_cover_call", "").lower()
         det_present = (built_frac >= 0.05) or (det_call == "built-up") or bool(deterministic_signal.get("built-up", False))
 
@@ -165,7 +204,7 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
             built_pct = round(built_frac * 100, 1)
             return {
                 "confidence_tag": "high_cross_verified",
-                "reason": f"Cross-verified by Sentinel-1 double-bounce radar backscatter and NDBI (built-up coverage: {built_pct}%).",
+                "reason": f"Cross-verified by {built_sensor_label} (built-up coverage: {built_pct}%).",
                 "agreed": True,
                 "details": {"concept": "built-up", "built_up_fraction": built_frac, "vlm_claims_present": is_claiming_present},
             }
@@ -174,7 +213,7 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
             vlm_state = "present" if is_claiming_present else "absent"
             return {
                 "confidence_tag": "lower_confidence",
-                "reason": f"Disagreement: VLM claims built-up structures are {vlm_state}, but physical radar and NDBI measure {built_pct}% coverage.",
+                "reason": f"Disagreement: VLM claims built-up structures are {vlm_state}, but {built_meas_label} measures {built_pct}% coverage.",
                 "agreed": False,
                 "details": {"concept": "built-up", "built_up_fraction": built_frac, "vlm_claims_present": is_claiming_present},
             }
@@ -200,7 +239,7 @@ def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | Non
     # Fallback for claims with no matching deterministic parameter
     return {
         "confidence_tag": "lower_confidence",
-        "reason": "no deterministic cross-check available for this claim.",
+        "reason": "Single-Signal Result — Not Cross-Verified (no deterministic cross-check available for this claim concept).",
         "agreed": False,
         "details": {"cause": "unmatched_claim_concept"},
     }
@@ -225,7 +264,8 @@ class CrossVerifier:
         if res["confidence_tag"] == "high_cross_verified":
             return VerificationResult(True, min(0.96, vlm_confidence + 0.05), "high_cross_verified", evidence, res["reason"])
         else:
-            return VerificationResult(False, 0.65, "lower_confidence_disagreement", evidence, res["reason"])
+            dropped_conf = round(min(0.45, vlm_confidence * 0.5), 4)
+            return VerificationResult(False, dropped_conf, "lower_confidence_disagreement", evidence, res["reason"])
 
     def verify_grounding_mask(self, predicted_mask: np.ndarray, target_entity: str, spectral: SpectralIndicesResult) -> VerificationResult:
         t = target_entity.lower()
@@ -236,6 +276,8 @@ class CrossVerifier:
             ref = spectral.vegetation_mask
             name = "NDVI"
         elif "building" in t or "urban" in t:
+            if spectral.built_up_mask is None:
+                return VerificationResult(False, 0.45, "lower_confidence", {}, "Target 'building/urban' cannot be verified: NDBI unavailable (requires SWIR band).")
             ref = spectral.built_up_mask
             name = "NDBI"
         else:

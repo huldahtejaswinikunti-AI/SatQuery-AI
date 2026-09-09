@@ -52,9 +52,9 @@ def test_analyze_response_includes_spectral_labels_contract(api_client):
     assert "ndbi_label" in spectral
 
     # 3. Contract: labels MUST strictly equal the output of spectral_interpretation functions
-    ndvi_mean = float(spectral["ndvi_mean"])
-    ndwi_mean = float(spectral["ndwi_mean"])
-    ndbi_mean = float(spectral["ndbi_mean"])
+    ndvi_mean = float(spectral["ndvi_mean"]) if spectral["ndvi_mean"] is not None else None
+    ndwi_mean = float(spectral["ndwi_mean"]) if spectral["ndwi_mean"] is not None else None
+    ndbi_mean = float(spectral["ndbi_mean"]) if spectral["ndbi_mean"] is not None else None
 
     assert spectral["ndvi_label"] == interpret_ndvi(ndvi_mean)
     assert spectral["ndwi_label"] == interpret_ndwi(ndwi_mean)

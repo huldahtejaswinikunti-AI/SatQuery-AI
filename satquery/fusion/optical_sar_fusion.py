@@ -81,7 +81,11 @@ def fuse(
     # Optical rule masks
     opt_water = ndwi >= 0.0
     opt_veg = ndvi >= 0.30
-    opt_builtup = (ndbi >= 0.0) & (ndvi < 0.20)
+    opt_builtup = (
+        (ndbi >= 0.0) & (ndvi < 0.20)
+        if ndbi is not None
+        else np.zeros_like(opt_water, dtype=bool)
+    )
 
     # Pixel-level fusion based on cloud condition
     # Cloud-free pixels: Optical is primary, SAR corroborates
@@ -209,6 +213,8 @@ class OpticalSARFusionEngine:
         sar = analyze_sar_backscatter(sar_arr)
 
         def _resize(m):
+            if m is None:
+                return np.zeros((h, w), dtype=bool)
             from PIL import Image
             if m.shape[:2] != (h, w):
                 return np.array(Image.fromarray(m.astype(np.uint8)*255).resize((w, h))) > 127

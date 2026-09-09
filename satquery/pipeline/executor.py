@@ -116,10 +116,10 @@ def answer_vqa_image(arr: np.ndarray, query: str) -> dict[str, Any]:
     indices = compute_spectral_indices(arr)
     ndvi = float(np.mean(indices.ndvi))
     ndwi = float(np.mean(indices.ndwi))
-    ndbi = float(np.mean(indices.ndbi))
+    ndbi = float(np.mean(indices.ndbi)) if indices.ndbi is not None else None
     veg_frac = round(indices.vegetation_fraction * 100, 1)
     water_frac = round(indices.water_fraction * 100, 1)
-    built_frac = round(indices.built_up_fraction * 100, 1)
+    built_frac = round(indices.built_up_fraction * 100, 1) if indices.built_up_fraction is not None else None
 
     from satquery.perception.spectral_interpretation import (
         interpret_ndvi,
@@ -131,7 +131,7 @@ def answer_vqa_image(arr: np.ndarray, query: str) -> dict[str, Any]:
     spectral_summary = {
         "ndvi_mean": round(ndvi, 4),
         "ndwi_mean": round(ndwi, 4),
-        "ndbi_mean": round(ndbi, 4),
+        "ndbi_mean": round(ndbi, 4) if ndbi is not None else None,
         "vegetation_fraction": indices.vegetation_fraction,
         "water_fraction": indices.water_fraction,
         "built_up_fraction": indices.built_up_fraction,
@@ -217,21 +217,27 @@ def answer_vqa_image(arr: np.ndarray, query: str) -> dict[str, Any]:
         )
         ans += f" Reflectance profile confirms: {interpret_ndvi(ndvi)}."
     elif any(w in q_lower for w in ("building", "urban", "structure", "industrial", "warehouse", "city", "settlement")):
-        ans = (
-            f"Built-up area analysis: NDBI index measures {ndbi:+.3f} with {built_frac}% "
-            f"built-up coverage. Classification: {label_str} (confidence: {conf*100:.1f}%)."
-        )
-        ans += f" Reflectance profile confirms: {interpret_ndbi(ndbi)}."
+        if ndbi is not None and built_frac is not None:
+            ans = (
+                f"Built-up area analysis: NDBI index measures {ndbi:+.3f} with {built_frac}% "
+                f"built-up coverage. Classification: {label_str} (confidence: {conf*100:.1f}%)."
+            )
+            ans += f" Reflectance profile confirms: {interpret_ndbi(ndbi)}."
+        else:
+            ans = (
+                f"Built-up area analysis: NDBI spectral calculation unavailable (input lacks physical SWIR band). "
+                f"Classification: {label_str} (confidence: {conf*100:.1f}%)."
+            )
     else:
         # General query — provide comprehensive breakdown
         top_desc = "; ".join(
             f"{t['class_name']} ({t['probability']*100:.1f}%)" for t in top_k[:3]
         ) if top_k else label_str
+        built_part = f", {built_frac}% built-up (NDBI: {ndbi:+.3f})" if built_frac is not None and ndbi is not None else ""
         ans = (
             f"Remote sensing analysis identifies: {top_desc}. "
             f"Scene composition: {veg_frac}% vegetation (NDVI: {ndvi:+.3f}), "
-            f"{water_frac}% water (NDWI: {ndwi:+.3f}), "
-            f"{built_frac}% built-up (NDBI: {ndbi:+.3f}). "
+            f"{water_frac}% water (NDWI: {ndwi:+.3f}){built_part}. "
             f"Primary classification confidence: {conf*100:.1f}%."
         )
 
@@ -275,10 +281,10 @@ def generate_grounded_caption(arr: np.ndarray) -> dict[str, Any]:
     indices = compute_spectral_indices(arr)
     ndvi = float(np.mean(indices.ndvi))
     ndwi = float(np.mean(indices.ndwi))
-    ndbi = float(np.mean(indices.ndbi))
+    ndbi = float(np.mean(indices.ndbi)) if indices.ndbi is not None else None
     veg_frac = round(indices.vegetation_fraction * 100, 1)
     water_frac = round(indices.water_fraction * 100, 1)
-    built_frac = round(indices.built_up_fraction * 100, 1)
+    built_frac = round(indices.built_up_fraction * 100, 1) if indices.built_up_fraction is not None else None
 
     from satquery.perception.spectral_interpretation import (
         interpret_ndvi,
@@ -290,7 +296,7 @@ def generate_grounded_caption(arr: np.ndarray) -> dict[str, Any]:
     spectral_summary = {
         "ndvi_mean": round(ndvi, 4),
         "ndwi_mean": round(ndwi, 4),
-        "ndbi_mean": round(ndbi, 4),
+        "ndbi_mean": round(ndbi, 4) if ndbi is not None else None,
         "vegetation_fraction": indices.vegetation_fraction,
         "water_fraction": indices.water_fraction,
         "built_up_fraction": indices.built_up_fraction,
@@ -353,23 +359,27 @@ def run_change_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
 
 def run_fusion(validated_input: ValidatedInput) -> dict[str, Any]:
     """Optical + SAR cloud-penetrating fusion specialist."""
-    from satquery.utils.geo_io import load_image_as_array
     from satquery.fusion.optical_sar_fusion import fuse
     from satquery.perception.cloud_mask import compute_cloud_mask
-    from satquery.perception.sar_backscatter import compute_sar_masks
+    from satquery.perception.sar_backscatter import analyze_sar_backscatter
     from satquery.perception.spectral_indices import compute_indices
+    from satquery.utils.image_utils import extract_optical_bands
 
     opt_meta = validated_input.images[0]
     sar_meta = validated_input.images[1]
     if opt_meta.modality.value == "sar":
         opt_meta, sar_meta = sar_meta, opt_meta
 
-    opt_arr, _ = load_image_as_array(opt_meta.path)
-    sar_arr, _ = load_image_as_array(sar_meta.path)
+    opt_arr = _load_image_for_specialist(opt_meta.path)
+    sar_arr = _load_image_for_specialist(sar_meta.path)
 
-    opt_indices = compute_indices(opt_arr)
+    opt_indices = compute_indices(extract_optical_bands(opt_arr))
     cloud_mask = compute_cloud_mask(opt_arr)
-    sar_masks = compute_sar_masks(sar_arr)
+    sar_res = analyze_sar_backscatter(sar_arr)
+    sar_masks = {
+        "water_mask": sar_res.sar_water_mask,
+        "builtup_mask": sar_res.sar_built_up_mask,
+    }
 
     res = fuse(opt_indices, sar_masks, cloud_mask)
     return {
@@ -381,19 +391,30 @@ def run_fusion(validated_input: ValidatedInput) -> dict[str, Any]:
     }
 
 
-def verify(facts: dict[str, Any]) -> dict[str, Any]:
-    """Cross-verification step — passes real spectral fractions to verifier."""
+def verify(facts: dict[str, Any], has_sar: bool = False) -> dict[str, Any]:
+    """Cross-verification step — passes real spectral fractions and top predictions to verifier."""
     try:
         from satquery.cross_verification.verifier import verify as _cv_verify
         # Build a proper deterministic signal from spectral data if available
         det_signal = facts.get("spectral_summary", facts.get("details", facts))
-        return _cv_verify(facts, deterministic_signal=det_signal)
+        if isinstance(det_signal, dict):
+            top_k = facts.get("top_k", [])
+            if top_k and "top_class" not in det_signal:
+                det_signal["top_class"] = top_k[0].get("class_name", "")
+                det_signal["top_k"] = top_k
+        has_sar_flag = has_sar or bool(facts.get("has_sar", False) or facts.get("source") == "optical_sar_fusion")
+        res = _cv_verify(facts, deterministic_signal=det_signal, has_sar=has_sar_flag)
+        if not res.get("agreed", False):
+            raw_c = float(facts.get("raw_confidence", 0.8))
+            facts["raw_confidence"] = round(min(raw_c * 0.5, 0.45), 4)
+            res["raw_confidence"] = facts["raw_confidence"]
+        return res
     except Exception as e:
         logger.warning("Cross-verification fallback: %s", e)
         return {
-            "confidence_tag": "high_cross_verified",
-            "reason": "Corroborated by physical sensor evidence.",
-            "agreed": True,
+            "confidence_tag": "lower_confidence",
+            "reason": f"Single-Signal Result — Not Cross-Verified ({e}).",
+            "agreed": False,
             "details": facts,
         }
 
@@ -506,8 +527,16 @@ def execute(
 
     # --- Step 2: Cross-verification ---
     tools_invoked.append("cross_verification")
+    has_sar_input = (
+        any(getattr(img.modality, "value", "") == "sar" for img in validated_input.images)
+        if getattr(validated_input, "images", None)
+        else False
+    )
+    if has_sar_input and isinstance(facts, dict):
+        facts["has_sar"] = True
+
     verified_facts = _call_with_retry(
-        lambda inp: globals().get("verify", verify)(facts),  # verify takes facts, not input
+        lambda inp: globals().get("verify", verify)(facts),
         validated_input,
         task,
         "cross_verification",

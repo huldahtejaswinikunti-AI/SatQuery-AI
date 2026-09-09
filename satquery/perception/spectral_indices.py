@@ -9,13 +9,13 @@ from satquery.utils.image_utils import extract_optical_bands
 class SpectralIndicesResult:
     ndvi: np.ndarray
     ndwi: np.ndarray
-    ndbi: np.ndarray
+    ndbi: np.ndarray | None
     vegetation_mask: np.ndarray
     water_mask: np.ndarray
-    built_up_mask: np.ndarray
+    built_up_mask: np.ndarray | None
     vegetation_fraction: float
     water_fraction: float
-    built_up_fraction: float
+    built_up_fraction: float | None
 
 
 def compute_normalized_difference(band_a: np.ndarray, band_b: np.ndarray, eps: float = 1e-6) -> np.ndarray:
@@ -30,7 +30,7 @@ def compute_normalized_difference(band_a: np.ndarray, band_b: np.ndarray, eps: f
     return np.clip((a - b) / denom, -1.0, 1.0)
 
 
-def compute_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+def compute_indices(bands: dict[str, np.ndarray | None]) -> dict[str, np.ndarray | None]:
     """
     Computes standard Sentinel-2 optical spectral indices (NDVI, NDWI, NDBI).
 
@@ -45,16 +45,16 @@ def compute_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         pipeline breakages and ensure safe thresholding without NaN propagation.
 
     Args:
-        bands: Dictionary containing Sentinel-2 band arrays with keys:
-               "red", "green", "nir", "swir" (each as 2D or 3D numpy ndarray, float or uint).
+        bands: Dictionary containing band arrays with keys:
+               "red", "green", "nir", and optionally "swir".
 
     Returns:
         Dictionary with keys:
             "ndvi": ndarray of float32, bounded in [-1.0, 1.0]
             "ndwi": ndarray of float32, bounded in [-1.0, 1.0]
-            "ndbi": ndarray of float32, bounded in [-1.0, 1.0]
+            "ndbi": ndarray of float32 bounded in [-1.0, 1.0] if "swir" provided, else None
     """
-    required_keys = {"red", "green", "nir", "swir"}
+    required_keys = {"red", "green", "nir"}
     missing = required_keys - set(bands.keys())
     if missing:
         raise ValueError(f"Missing required band(s) in input dictionary: {missing}")
@@ -62,7 +62,9 @@ def compute_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     red = np.asarray(bands["red"], dtype=np.float32)
     green = np.asarray(bands["green"], dtype=np.float32)
     nir = np.asarray(bands["nir"], dtype=np.float32)
-    swir = np.asarray(bands["swir"], dtype=np.float32)
+
+    swir_band = bands.get("swir")
+    swir = np.asarray(swir_band, dtype=np.float32) if swir_band is not None else None
 
     def _calc_ratio(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         denom = a + b
@@ -77,7 +79,7 @@ def compute_indices(bands: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
     ndvi = _calc_ratio(nir, red)
     ndwi = _calc_ratio(green, nir)
-    ndbi = _calc_ratio(swir, nir)
+    ndbi = _calc_ratio(swir, nir) if swir is not None else None
 
     return {
         "ndvi": ndvi,
@@ -98,13 +100,19 @@ def compute_spectral_indices(image_arr: np.ndarray) -> SpectralIndicesResult:
     thresh = settings.spectral
     vegetation_mask = ndvi >= thresh.ndvi_sparse_vegetation
     water_mask = ndwi >= thresh.ndwi_water_body
-    built_up_mask = ndbi >= thresh.ndbi_built_up
-
+    
     tot = float(image_arr.shape[0] * image_arr.shape[1])
+    if ndbi is not None:
+        built_up_mask = ndbi >= thresh.ndbi_built_up
+        built_up_fraction = round(float(np.sum(built_up_mask)) / tot, 4)
+    else:
+        built_up_mask = None
+        built_up_fraction = None
+
     return SpectralIndicesResult(
         ndvi=ndvi, ndwi=ndwi, ndbi=ndbi,
         vegetation_mask=vegetation_mask, water_mask=water_mask, built_up_mask=built_up_mask,
         vegetation_fraction=round(float(np.sum(vegetation_mask)) / tot, 4),
         water_fraction=round(float(np.sum(water_mask)) / tot, 4),
-        built_up_fraction=round(float(np.sum(built_up_mask)) / tot, 4),
+        built_up_fraction=built_up_fraction,
     )

@@ -159,16 +159,49 @@ def _load_with_tifffile(filepath: Path) -> dict[str, Any]:
             f"Unexpected TIFF array shape {data.shape}; expected 2-D or 3-D."
         )
 
+    crs_value = None
+    transform_tuple = None
+    bounds_dict = None
+    format_name = "TIFF"
+
+    try:
+        with tifffile.TiffFile(str(filepath)) as tif:
+            geo = getattr(tif, "geotiff_metadata", None)
+            if geo:
+                format_name = "GeoTIFF"
+                epsg = geo.get("GeographicTypeGeoKey") or geo.get("ProjectedCSTypeGeoKey")
+                if epsg is not None:
+                    crs_value = getattr(epsg, "value", epsg)
+                else:
+                    crs_value = 4326
+
+                scale = geo.get("ModelPixelScale")
+                tiepoint = geo.get("ModelTiepoint")
+                if scale and tiepoint and len(scale) >= 2 and len(tiepoint) >= 6:
+                    sx, sy = float(scale[0]), float(scale[1])
+                    x0, y0 = float(tiepoint[3]), float(tiepoint[4])
+                    transform_tuple = (sx, 0.0, x0, 0.0, -sy, y0)
+                    w = bands["band_1"].shape[1]
+                    h = bands["band_1"].shape[0]
+                    bounds_dict = {
+                        "left": x0,
+                        "bottom": y0 - sy * h,
+                        "right": x0 + sx * w,
+                        "top": y0,
+                    }
+    except Exception:
+        pass
+
     metadata = {
-        "crs": None,
-        "transform": None,
+        "crs": crs_value,
+        "transform": transform_tuple,
         "band_count": band_count,
-        "bounds": None,
+        "bounds": bounds_dict,
         "dtype": str(data.dtype),
         "nodata": None,
         "width": bands["band_1"].shape[1],
         "height": bands["band_1"].shape[0],
-        "format": "TIFF",
+        "format": format_name,
     }
 
     return {"bands": bands, "metadata": metadata}
@@ -268,6 +301,7 @@ def load_image_as_array(
         arr = _bands_to_array(result["bands"])
         meta = result["metadata"]
         meta["filename"] = _Path(file_or_path).name
+        meta["path"] = str(file_or_path)
         return arr, meta
 
     # Otherwise treat as file-like (Streamlit UploadedFile)

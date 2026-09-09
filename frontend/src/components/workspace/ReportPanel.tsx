@@ -258,7 +258,8 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
             <ConfidenceBadge
               domain={domain}
               confidenceScore={confidenceScore}
-              isVerified={!isLunar}
+              isVerified={Boolean(facts.agreed)}
+              confidenceTag={result?.confidence_tag}
               calibrationStatus={modelCalibration}
             />
 
@@ -443,7 +444,7 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
             <div className="p-3 rounded bg-[var(--bg-panel-elevated)] border border-[var(--border-hairline)] space-y-1">
               <span className="font-mono text-[9px] text-[var(--text-secondary)] uppercase">NDBI (BUILT-UP)</span>
               <p className="font-mono text-sm font-bold text-amber-400">
-                {spectral.ndbi_mean !== undefined ? Number(spectral.ndbi_mean).toFixed(4) : 'N/A'}
+                {spectral.ndbi_mean !== undefined && spectral.ndbi_mean !== null ? Number(spectral.ndbi_mean).toFixed(4) : 'N/A (No SWIR)'}
               </p>
               <span className="font-sans text-[10px] text-[var(--text-secondary)] block truncate">
                 {spectral.ndbi_label || 'Spectral Index'}

@@ -159,3 +159,66 @@ def test_fuse_cloud_covered_sar_override_water():
     res = fuse(optical_indices, sar_masks, cloud_mask)
     assert res["land_cover_call"] == "water"
     assert "water" in res["reason"].lower()
+
+
+def test_verify_conflict_water_dominant_vs_dry_land_classifier():
+    """Bug 2 acceptance test: Dominant water signal conflicts with dry land classification.
+
+    Confidence must drop and status must NOT say 'Agreed' or 'Verified'.
+    """
+    claim = {
+        "answer": "Water analysis: NDWI index measures +0.3413 with 62.5% of the scene classified as water bodies. Dominant land cover: Arable land (top-1 confidence: 80.8%).",
+        "source": "land_cover_specialist",
+    }
+    signal = {
+        "water_fraction": 0.625,
+        "top_class": "Arable land",
+        "top_k": [{"class_name": "Arable land", "probability": 0.808}],
+    }
+    res = verify(claim, signal, has_sar=False)
+
+    # Must flag conflict and disagree
+    assert res["agreed"] is False
+    assert res["confidence_tag"] == "lower_confidence"
+    assert "Disagreement" in res["reason"] or "Conflict" in res["reason"]
+    assert "High Cross Verified" not in res["reason"]
+    assert "Agreed" not in res["reason"]
+
+    # Test through executor verify function to assert confidence drop
+    from satquery.pipeline.executor import verify as exec_verify
+    facts = {
+        "answer": claim["answer"],
+        "raw_confidence": 0.808,
+        "top_k": signal["top_k"],
+        "spectral_summary": signal,
+    }
+    vf = exec_verify(facts, has_sar=False)
+    assert vf["agreed"] is False
+    assert vf["confidence_tag"] == "lower_confidence"
+    assert vf["raw_confidence"] < 0.50  # Confidence score must drop on conflict!
+
+
+def test_verify_no_sar_explanation_text_omits_sar():
+    """Bug 2 acceptance test: When input lacks SAR, explanation text must NOT mention SAR or radar."""
+    claim = {"answer": "Water is detected across the basin."}
+    signal = {"water_fraction": 0.45}
+
+    # Case A: has_sar=False (single optical input)
+    res_optical = verify(claim, signal, has_sar=False)
+    assert res_optical["agreed"] is True
+    assert "SAR" not in res_optical["reason"]
+    assert "radar" not in res_optical["reason"].lower()
+    assert "NDWI" in res_optical["reason"]
+
+    # Case B: Disagreement without SAR
+    claim_no_water = {"answer": "No water bodies are present."}
+    res_disagree = verify(claim_no_water, signal, has_sar=False)
+    assert res_disagree["agreed"] is False
+    assert "SAR" not in res_disagree["reason"]
+    assert "radar" not in res_disagree["reason"].lower()
+
+    # Case C: has_sar=True (multimodal optical-SAR input)
+    res_sar = verify(claim, signal, has_sar=True)
+    assert res_sar["agreed"] is True
+    assert "SAR" in res_sar["reason"]
+

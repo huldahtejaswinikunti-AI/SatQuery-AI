@@ -51,7 +51,7 @@ def interpret_ndwi(ndwi: float) -> str:
         return "Dry land surface"
 
 
-def interpret_ndbi(ndbi: float) -> str:
+def interpret_ndbi(ndbi: float | None) -> str:
     """Classify Normalized Difference Built-up Index into structural surface categories.
 
     Thresholds:
@@ -59,6 +59,8 @@ def interpret_ndbi(ndbi: float) -> str:
       > 0.0 : Mixed built-up and natural
       <= 0.0: Natural land cover
     """
+    if ndbi is None:
+        return "Unavailable (requires SWIR band)"
     if ndbi > 0.1:
         return "Built-up / urban area"
     elif ndbi > 0.0:
@@ -75,9 +77,17 @@ def interpret_ndbi(ndbi: float) -> str:
 def compute_four_way_composition(
     veg_pct: float,
     water_pct: float,
-    built_pct: float,
-) -> dict[str, float]:
+    built_pct: float | None,
+) -> dict[str, float | None]:
     """Compute 4-way terrain partition (vegetation / water / built-up / other)."""
+    if built_pct is None:
+        other_pct = max(0.0, round(100.0 - veg_pct - water_pct, 1))
+        return {
+            "vegetation": round(veg_pct, 1),
+            "water": round(water_pct, 1),
+            "built_up": None,
+            "other": other_pct,
+        }
     other_pct = max(0.0, round(100.0 - veg_pct - water_pct - built_pct, 1))
     return {
         "vegetation": round(veg_pct, 1),
@@ -90,10 +100,10 @@ def compute_four_way_composition(
 def describe_dominant_land_cover(
     veg_pct: float,
     water_pct: float,
-    built_pct: float,
+    built_pct: float | None,
     ndvi: float,
     ndwi: float,
-    ndbi: float,
+    ndbi: float | None,
 ) -> str:
     """Generate a mathematically sound natural-language description of scene dominance.
 
@@ -124,7 +134,7 @@ def describe_dominant_land_cover(
             f"The scene is predominantly water ({wat}% coverage, NDWI: {ndwi:+.3f}), "
             f"indicating {ndwi_label.lower()}."
         )
-    if blt > 50.0:
+    if blt is not None and blt > 50.0 and ndbi is not None:
         return (
             f"The scene is predominantly built-up ({blt}% coverage, NDBI: {ndbi:+.3f}), "
             f"indicating {ndbi_label.lower()}."
@@ -134,8 +144,10 @@ def describe_dominant_land_cover(
     tracked = [
         ("vegetation", veg, "NDVI", ndvi, ndvi_label, 15.0),
         ("water", wat, "NDWI", ndwi, ndwi_label, 5.0),
-        ("built-up", blt, "NDBI", ndbi, ndbi_label, 5.0),
     ]
+    if blt is not None and ndbi is not None:
+        tracked.append(("built-up", blt, "NDBI", ndbi, ndbi_label, 5.0))
+
     # Sort by fraction descending
     tracked.sort(key=lambda x: x[1], reverse=True)
     top_name, top_pct, top_idx_name, top_val, top_interp, min_thresh = tracked[0]
@@ -147,7 +159,8 @@ def describe_dominant_land_cover(
         )
 
     # 3. Mixed / Unclassified Baseline
+    built_str = f", {blt}% built-up" if blt is not None else ""
     return (
-        f"Mixed land cover: {veg}% vegetation, {wat}% water, {blt}% built-up, "
+        f"Mixed land cover: {veg}% vegetation, {wat}% water{built_str}, "
         f"{oth}% other/unclassified."
     )

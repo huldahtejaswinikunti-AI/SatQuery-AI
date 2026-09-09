@@ -198,6 +198,8 @@ def analyze(req: AnalyzeRequest) -> dict[str, Any]:
         if not resolved:
             raise HTTPException(status_code=400, detail=f"Could not resolve observation file: {f}")
         arr, meta = load_image_as_array(str(resolved))
+        meta["path"] = str(resolved)
+        meta["filename"] = resolved.name
         images.append(arr)
         metas.append(meta)
 
@@ -332,6 +334,8 @@ def process_batch(req: BatchRequest) -> list[dict[str, Any]]:
             resolved = _resolve_image_path(f, is_lunar=is_lunar)
             if resolved:
                 arr, meta = load_image_as_array(str(resolved))
+                meta["path"] = str(resolved)
+                meta["filename"] = resolved.name
                 imgs.append(arr)
                 metas.append(meta)
         batch_items.append({

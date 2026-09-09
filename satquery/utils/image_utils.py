@@ -274,7 +274,8 @@ def extract_optical_bands(array: np.ndarray) -> dict[str, np.ndarray]:
         g = arr[:, :, 1].astype(np.float32)
         b = arr[:, :, 2].astype(np.float32)
         nir = arr[:, :, 3].astype(np.float32)
-        return {"red": r, "green": g, "blue": b, "nir": nir, "swir": nir}
+        # 4-band optical (RGB + NIR) lacks SWIR band (e.g. Sentinel-2 B11/B12)
+        return {"red": r, "green": g, "blue": b, "nir": nir, "swir": None}
     else:
         # RGB (3 bands)
         r = arr[:, :, 0].astype(np.float32)
@@ -282,7 +283,8 @@ def extract_optical_bands(array: np.ndarray) -> dict[str, np.ndarray]:
         b = arr[:, :, 2].astype(np.float32)
         # Synthetic NIR estimate from Green/Red
         nir = np.clip(1.5 * g - 0.5 * r, 0.0, None)
-        return {"red": r, "green": g, "blue": b, "nir": nir, "swir": g}
+        # RGB imagery does not contain a physical SWIR band; do not alias to Green
+        return {"red": r, "green": g, "blue": b, "nir": nir, "swir": None}
 
 
 def extract_sar_bands(array: np.ndarray) -> dict[str, np.ndarray]:
