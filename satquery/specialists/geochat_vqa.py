@@ -52,6 +52,7 @@ def load_model(
     model_id: str = _MODEL_ID,
     lora_adapter_dir: Optional[Union[str, Path]] = None,
     device: Optional[str] = None,
+    local_files_only: bool = False,
 ) -> None:
     """Load GeoChat-7B in 4-bit with optional LoRA adapter.
 
@@ -65,6 +66,8 @@ def load_model(
         not exist or is empty.
     device : str | None
         Target device (auto-detected when *None*).
+    local_files_only : bool
+        If True, only load from local cache without triggering network downloads.
     """
     global _model, _processor, _device
 
@@ -89,12 +92,13 @@ def load_model(
         quantization_config=bnb_config,
         device_map="auto",
         torch_dtype=torch.float16,
+        local_files_only=local_files_only,
     )
 
     try:
-        _processor = LlavaProcessor.from_pretrained(model_id)
+        _processor = LlavaProcessor.from_pretrained(model_id, local_files_only=local_files_only)
     except Exception:
-        _processor = LlavaProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
+        _processor = LlavaProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf", local_files_only=local_files_only)
 
     # --- LoRA adapter -------------------------------------------------------
     adapter_dir = Path(lora_adapter_dir) if lora_adapter_dir else _LORA_ADAPTER_DIR

@@ -170,6 +170,32 @@ def _run_pipeline_inner(
     # Generate markdown report with enriched verified facts
     report_md = generate_report(trace, answer_text, verified_facts=verified_facts)
 
+    # Extract spectral_summary and enrich with standardized interpretations
+    spectral_summary = raw.get("spectral_summary", verified_facts.get("spectral_summary") if isinstance(verified_facts, dict) else None)
+    if isinstance(spectral_summary, dict):
+        from satquery.perception.spectral_interpretation import (
+            interpret_ndvi,
+            interpret_ndwi,
+            interpret_ndbi,
+        )
+        if "ndvi_mean" in spectral_summary and "ndvi_label" not in spectral_summary:
+            spectral_summary["ndvi_label"] = interpret_ndvi(float(spectral_summary["ndvi_mean"]))
+        if "ndwi_mean" in spectral_summary and "ndwi_label" not in spectral_summary:
+            spectral_summary["ndwi_label"] = interpret_ndwi(float(spectral_summary["ndwi_mean"]))
+        if "ndbi_mean" in spectral_summary and "ndbi_label" not in spectral_summary:
+            spectral_summary["ndbi_label"] = interpret_ndbi(float(spectral_summary["ndbi_mean"]))
+        if isinstance(verified_facts, dict):
+            verified_facts["spectral_summary"] = spectral_summary
+
+    calib_status = (
+        raw.get("model_calibration")
+        or (verified_facts.get("model_calibration") if isinstance(verified_facts, dict) else None)
+        or trace.get("model_calibration")
+        or "calibrated"
+    )
+    if isinstance(verified_facts, dict) and "model_calibration" not in verified_facts:
+        verified_facts["model_calibration"] = calib_status
+
     result = {
         "answer": answer_text,
         "overlay": overlay,
@@ -180,9 +206,10 @@ def _run_pipeline_inner(
         "report_path": None,
         "report_markdown": report_md,
         "verified_facts": verified_facts,
+        "model_calibration": calib_status,
         # Direct access to enriched specialist data
         "top_k": raw.get("top_k", verified_facts.get("top_k") if isinstance(verified_facts, dict) else None),
-        "spectral_summary": raw.get("spectral_summary", verified_facts.get("spectral_summary") if isinstance(verified_facts, dict) else None),
+        "spectral_summary": spectral_summary,
         # Passthrough optional fields from teammates
         "consensus_score": raw.get("consensus_score",
                                     verified_facts.get("consensus_score") if isinstance(verified_facts, dict) else None),

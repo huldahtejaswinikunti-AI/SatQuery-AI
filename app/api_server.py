@@ -257,12 +257,39 @@ def analyze(req: AnalyzeRequest) -> dict[str, Any]:
     clean_trace = sanitize_for_json(result.get("trace", {}))
     clean_metas = sanitize_for_json(metas)
 
+    # Attach model_calibration flag
+    calib = (
+        clean_verified_facts.get("model_calibration")
+        or clean_trace.get("model_calibration")
+        or result.get("model_calibration")
+        or "calibrated"
+    )
+    clean_verified_facts["model_calibration"] = calib
+
+    # Attach standardized spectral labels
+    from satquery.perception.spectral_interpretation import (
+        interpret_ndvi,
+        interpret_ndwi,
+        interpret_ndbi,
+    )
+    spectral = clean_verified_facts.get("spectral_summary") or sanitize_for_json(result.get("spectral_summary"))
+    if spectral and isinstance(spectral, dict):
+        if "ndvi_mean" in spectral and "ndvi_label" not in spectral:
+            spectral["ndvi_label"] = interpret_ndvi(float(spectral["ndvi_mean"]))
+        if "ndwi_mean" in spectral and "ndwi_label" not in spectral:
+            spectral["ndwi_label"] = interpret_ndwi(float(spectral["ndwi_mean"]))
+        if "ndbi_mean" in spectral and "ndbi_label" not in spectral:
+            spectral["ndbi_label"] = interpret_ndbi(float(spectral["ndbi_mean"]))
+        clean_verified_facts["spectral_summary"] = spectral
+
     return {
         "answer": result.get("answer", ""),
         "confidence": str(result.get("confidence", "0.0")),
         "confidence_tag": result.get("confidence_tag", "unverified"),
         "confidence_score": float(result["confidence_score"]) if result.get("confidence_score") is not None else None,
         "overlay": overlay_data_uri,
+        "model_calibration": calib,
+        "spectral_summary": spectral,
         "verified_facts": clean_verified_facts,
         "consensus_score": float(result["consensus_score"]) if result.get("consensus_score") is not None else None,
         "change_direction": result.get("change_direction"),

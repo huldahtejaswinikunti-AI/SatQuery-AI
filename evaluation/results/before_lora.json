@@ -1,6 +1,469 @@
 {
+  "provenance": {
+    "script": "evaluation/run_rsvqa_eval.py",
+    "timestamp": "2026-09-09T20:22:44.933220+00:00",
+    "git_commit": "4801311fe533eef22166ae133b5094bafeaad977",
+    "total_samples": 50
+  },
   "model": "MBZUAI/geochat-7B (Base Zero-Shot)",
-  "accuracy": 0.642,
-  "caption_bleu1": 0.485,
-  "hallucination_rate": 0.185
+  "split": "held_out",
+  "checkpoint": "None",
+  "total_samples": 50,
+  "num_samples": 50,
+  "accuracy": 0.16,
+  "mean_token_f1": 0.16,
+  "caption_bleu1": 0.131,
+  "hallucination_rate": 0.84,
+  "details": [
+    {
+      "id": "church/church_144.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: railway station, harbor, desert, palace, mobile home park, cloud, storage tank, medium residential, ship, tennis court, golf course, baseball diamond, snowberg, river, mountain, church, terrace, bridge, forest, parking lot, airport, roundabout, dense residential, airplane, railway, runway, sea ice, lake, rectangular farmland, thermal power station, commercial area, stadium, circular farmland, wetland, industrial area, chaparral, overpass, sparse residential, intersection, freeway, ground track field, basketball court. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_386.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: palace, wetland, ground track field, church, intersection, cloud, river, harbor, lake, sparse residential, parking lot, tennis court, railway. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "sparse residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_362.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: chaparral, cloud, tennis court, river, church, sparse residential, bridge, desert, beach, airport, roundabout, circular farmland, terrace, forest, rectangular farmland, commercial area, thermal power station, golf course, island, ship, parking lot, snowberg, ground track field, lake, baseball diamond, dense residential, meadow, intersection, stadium, railway, airplane, mobile home park, palace, wetland. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_421.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: ground track field, chaparral, harbor, circular farmland, desert, ship, railway station, meadow, bridge, mountain, forest, river, sparse residential, rectangular farmland, railway, freeway, overpass, commercial area, sea ice, snowberg, intersection, stadium, terrace, dense residential, roundabout, medium residential, lake, church, beach, wetland, mobile home park, runway, industrial area, airport, thermal power station, parking lot, island, tennis court, golf course, airplane, storage tank, basketball court, cloud. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_448.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: golf course, mobile home park, runway, circular farmland, meadow, roundabout, bridge, harbor, freeway, sparse residential, thermal power station, overpass, church, industrial area, rectangular farmland, storage tank, wetland, island, parking lot, river, terrace, chaparral, ground track field, stadium, beach, railway, ship, sea ice, commercial area, desert, airport, railway station, cloud, lake. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_600.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: roundabout, river, baseball diamond, golf course, dense residential, church, commercial area. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_176.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: stadium, island, meadow, roundabout, runway, overpass, bridge, wetland, church, circular farmland, snowberg, terrace, thermal power station, medium residential. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_216.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: railway, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_396.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: wetland, railway station, mobile home park, thermal power station, terrace, airplane, lake, cloud, overpass, roundabout, mountain, palace, stadium, forest, ship, church, dense residential, runway, sparse residential, sea ice, tennis court, chaparral, freeway, parking lot, harbor, airport, railway, industrial area, golf course, desert. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_289.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: meadow, palace, wetland, parking lot, chaparral, roundabout, ship, lake, church, industrial area, commercial area, beach, airport, basketball court, stadium, railway, railway station, bridge, circular farmland, tennis court, snowberg. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_518.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: church, snowberg, terrace. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_404.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: golf course, baseball diamond, island, storage tank, railway station, mobile home park, thermal power station, beach, desert, cloud, forest, chaparral, stadium, tennis court, overpass, commercial area, medium residential, railway, mountain, roundabout, ship, terrace, freeway, runway, meadow, ground track field, circular farmland, industrial area, airplane, church, bridge, sparse residential, airport, harbor, river, lake, parking lot, sea ice, snowberg, basketball court, dense residential. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "meadow",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_324.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: bridge, commercial area, intersection, dense residential, overpass, ground track field, lake, sea ice, church, beach, sparse residential. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_650.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: circular farmland, parking lot, terrace, ship, overpass, chaparral, snowberg, industrial area, intersection, cloud, ground track field, dense residential, harbor, airplane, church, rectangular farmland, stadium, runway, railway, palace, desert, roundabout, basketball court, beach, golf course, freeway, thermal power station. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_184.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: overpass, intersection, harbor, church, cloud, circular farmland, wetland, airplane, sparse residential, desert, roundabout. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "sparse residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_086.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: palace, desert, ground track field, river, storage tank, sparse residential, bridge, airplane, church, industrial area, wetland, chaparral, mountain, commercial area, meadow, golf course, rectangular farmland, ship, cloud, baseball diamond, railway station, intersection, thermal power station, freeway, airport, forest, runway, railway, sea ice, mobile home park, medium residential, snowberg. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_410.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: cloud, sea ice, storage tank, chaparral, river, dense residential, railway, freeway, commercial area, roundabout, mobile home park, forest, terrace, snowberg, sparse residential, circular farmland, railway station, wetland, airplane, palace, harbor, meadow, bridge, medium residential, basketball court, golf course, parking lot, tennis court, industrial area, airport, ground track field, beach, lake, thermal power station, island, overpass, stadium, mountain, runway, ship, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_128.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: baseball diamond, tennis court, intersection, circular farmland, church, terrace, chaparral. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_277.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: railway station, church, railway, intersection. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_193.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: terrace, church, cloud. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_383.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: roundabout, church, ground track field, snowberg, railway, thermal power station, basketball court. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_465.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: runway, beach, parking lot, rectangular farmland, cloud, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_455.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: basketball court, snowberg, cloud, mobile home park, church, meadow, railway station, freeway, dense residential. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_306.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: commercial area, harbor, palace, ship, rectangular farmland, mobile home park, golf course, stadium, terrace, baseball diamond, medium residential, dense residential, desert, sea ice, beach, chaparral, airplane, overpass, parking lot, circular farmland, sparse residential, intersection, forest, snowberg, lake, roundabout, freeway, bridge, wetland, meadow, river, church, cloud, thermal power station, ground track field. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_612.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: tennis court, snowberg, meadow, bridge, runway, mountain, circular farmland, harbor, beach, thermal power station, sparse residential, mobile home park, airplane, golf course, island, overpass, storage tank, stadium, desert, ground track field, rectangular farmland, roundabout, palace, sea ice, wetland, cloud, chaparral, commercial area, parking lot, railway station, medium residential, railway, basketball court, church, lake, baseball diamond. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_481.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: cloud, dense residential, roundabout, church, thermal power station, island, baseball diamond, terrace, sparse residential, storage tank, bridge. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_328.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: rectangular farmland, river, forest, sparse residential, snowberg, beach, airplane, lake, storage tank, harbor, terrace, church, circular farmland, bridge, dense residential, freeway, airport. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_189.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: intersection, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_553.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: parking lot, roundabout, dense residential, airplane, storage tank, mountain, runway, medium residential, golf course, overpass, railway station, palace, None, lake, meadow, forest. \nAnswer in one word or a short phrase.",
+      "ground_truth": "None",
+      "prediction": "forest",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_492.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: golf course, ground track field, basketball court, overpass, intersection, terrace, circular farmland, snowberg, rectangular farmland, commercial area, dense residential, roundabout, meadow, desert, thermal power station, airplane, lake, harbor, church, freeway, sea ice, medium residential, baseball diamond, parking lot, stadium, mobile home park, tennis court, sparse residential, beach, airport, palace, ship, runway, bridge, wetland, storage tank, industrial area, railway station, river, cloud, mountain, chaparral, forest. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_377.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: baseball diamond, bridge, beach, wetland, airplane, palace, forest, sparse residential, sea ice, dense residential, rectangular farmland, None, tennis court, mobile home park. \nAnswer in one word or a short phrase.",
+      "ground_truth": "None",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_014.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: commercial area, airport, dense residential, parking lot, basketball court, sea ice, stadium, tennis court, beach, roundabout, terrace, mountain, runway, desert, church, sparse residential, intersection, bridge, circular farmland, medium residential, railway station, ship, overpass, harbor, cloud, ground track field, freeway, wetland, meadow, railway. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_471.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: terrace, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "terrace",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_562.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: church, storage tank, overpass, parking lot, mobile home park, industrial area, palace, railway station, golf course, cloud, meadow, railway, lake, snowberg, stadium, chaparral, ground track field, commercial area, beach, circular farmland, baseball diamond, rectangular farmland, airplane, runway. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_251.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: beach, church, sparse residential, stadium, railway station, sea ice, freeway, medium residential. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "medium residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_171.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: sea ice, cloud, basketball court, church, rectangular farmland. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_613.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: harbor, desert, intersection, overpass, mountain, beach, freeway, sparse residential, bridge, runway, parking lot, chaparral, river, tennis court, palace, railway station, church, golf course, lake, baseball diamond, meadow, medium residential, commercial area, circular farmland, ship, industrial area, basketball court, terrace, roundabout, forest, wetland. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_493.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: lake, parking lot, bridge, circular farmland, desert, roundabout, commercial area, mobile home park, ground track field, ship, wetland, mountain, railway, rectangular farmland, snowberg, medium residential, baseball diamond, tennis court, dense residential, island, basketball court, beach, church. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_401.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: harbor, sparse residential, intersection, chaparral, dense residential, church, lake, terrace, ground track field, desert, circular farmland, railway, tennis court, ship, bridge, wetland, thermal power station, golf course, baseball diamond, storage tank, sea ice, meadow, commercial area, snowberg, airport, river, airplane, mountain. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "circular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_020.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: circular farmland, intersection, airport, parking lot, church, island, runway, river, industrial area, ground track field, commercial area, chaparral, palace, stadium, bridge, forest, roundabout, rectangular farmland, beach, sea ice. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_168.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: stadium, desert, ground track field, thermal power station, palace, railway, storage tank, industrial area, golf course, runway, mountain, bridge, freeway, lake, railway station, tennis court, circular farmland, forest, mobile home park, snowberg, chaparral, basketball court, river, baseball diamond, dense residential, medium residential, sea ice, sparse residential, wetland, parking lot, overpass, harbor, commercial area, airport, cloud, beach, intersection, church, rectangular farmland, roundabout, airplane. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_162.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: basketball court, ground track field, river, chaparral, mountain, runway, sea ice, roundabout, harbor, airplane, church, medium residential, golf course, snowberg, industrial area, island, airport. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "chaparral",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_089.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: snowberg, basketball court, bridge, wetland, beach, runway, ship, ground track field, storage tank, mobile home park, airport, overpass, airplane, thermal power station, commercial area, chaparral, tennis court, desert, baseball diamond, roundabout, railway, freeway, church, industrial area, stadium, mountain. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "commercial area",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_249.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: river, rectangular farmland, storage tank, island, church, golf course, airport, snowberg, palace, sea ice, basketball court, parking lot, mobile home park, industrial area, freeway, chaparral, ground track field, circular farmland, thermal power station, railway station, commercial area, tennis court. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "commercial area",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_417.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: church, meadow. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "church",
+      "exact_match": 1,
+      "token_f1": 1.0,
+      "hallucination": false
+    },
+    {
+      "id": "church/church_519.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: ground track field, commercial area, cloud, None, baseball diamond, freeway, mountain, roundabout, mobile home park, intersection. \nAnswer in one word or a short phrase.",
+      "ground_truth": "None",
+      "prediction": "commercial area",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_004.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: lake, freeway, railway, thermal power station, church, railway station, cloud, parking lot, tennis court, sea ice, intersection, mountain, palace, dense residential, mobile home park, roundabout, overpass, forest, industrial area, storage tank, sparse residential, desert, airport, bridge, airplane, baseball diamond, wetland, ground track field, snowberg, island, rectangular farmland, meadow. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "rectangular farmland",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_141.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: medium residential, chaparral, airplane, storage tank, runway, stadium, desert, intersection, ship, palace, railway station, ground track field, church, meadow, golf course, terrace, roundabout, snowberg, mobile home park, industrial area, bridge, sea ice, lake, beach, thermal power station, freeway, sparse residential, baseball diamond. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "meadow",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_635.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: commercial area, stadium, thermal power station, sparse residential, baseball diamond, sea ice, church, bridge. \nAnswer in one word or a short phrase.",
+      "ground_truth": "church",
+      "prediction": "sparse residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    },
+    {
+      "id": "church/church_662.jpg",
+      "question": "Classify the given image in one of the following classes. Classes: beach, dense residential, storage tank, None, chaparral, overpass, mountain, railway, airplane, palace. \nAnswer in one word or a short phrase.",
+      "ground_truth": "None",
+      "prediction": "dense residential",
+      "exact_match": 0,
+      "token_f1": 0.0,
+      "hallucination": true
+    }
+  ]
 }

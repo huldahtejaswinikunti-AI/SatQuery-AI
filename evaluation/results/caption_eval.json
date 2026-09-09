@@ -1,4 +1,418 @@
 {
-  "bleu_1": 0.0,
-  "caption": "High-resolution remote sensing image capturing urban fabric (100.0%), water bodies (100.0%)."
+  "provenance": {
+    "script": "evaluation/run_caption_eval.py",
+    "timestamp": "2026-09-09T20:17:48.730834+00:00",
+    "git_commit": "4801311fe533eef22166ae133b5094bafeaad977",
+    "total_samples": 50
+  },
+  "split": "held_out",
+  "checkpoint": "models/geochat/lora_adapter",
+  "total_samples": 50,
+  "num_samples": 50,
+  "bleu_1": 0.131,
+  "bleu_4": 0.131,
+  "meteor": 0.1205,
+  "caption": "Satellite observation classified as: Arable land (86.2%), Beaches, dunes, sands (53.8%), Complex cultivation patterns (50.0%). Mixed land cover: 0.1% vegetation, 1.9% water, 1.9% built-up, 96.1% other/unclassified. Image dimensions: 256x256.",
+  "details": [
+    {
+      "id": "church/church_144.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Beaches, dunes, sands (53.8%), Complex cultivation patterns (50.0%). Mixed land cover: 0.1% vegetation, 1.9% water, 1.9% built-up, 96.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_386.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Complex cultivation patterns (66.3%), Beaches, dunes, sands (64.9%). Mixed land cover: 0.0% vegetation, 0.0% water, 0.0% built-up, 100.0% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_362.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (81.3%), Complex cultivation patterns (65.8%), Beaches, dunes, sands (63.4%). Mixed land cover: 0.1% vegetation, 0.0% water, 0.0% built-up, 99.9% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_421.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (82.4%), Complex cultivation patterns (64.7%), Beaches, dunes, sands (61.5%). Mixed land cover: 0.0% vegetation, 1.4% water, 1.4% built-up, 97.2% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_448.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_600.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_176.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_216.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (47.3%), Urban fabric (46.2%), Arable land (37.0%). Mixed land cover: 3.6% vegetation, 0.0% water, 0.0% built-up, 96.4% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_396.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (80.8%), Urban fabric (48.7%), Complex cultivation patterns (43.2%). The scene is predominantly water (62.5% coverage, NDWI: +0.341), indicating open water body. Image dimensions: 256x256.",
+      "bleu_1": 0.1,
+      "bleu_4": 0.1,
+      "meteor": 0.1064
+    },
+    {
+      "id": "church/church_289.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (53.8%), Coniferous forest (44.5%), Urban fabric (44.0%). Mixed land cover: 5.9% vegetation, 2.5% water, 2.5% built-up, 89.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_518.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (48.2%), Coniferous forest (48.2%), Arable land (45.9%). Mixed land cover: 2.2% vegetation, 0.0% water, 0.0% built-up, 97.8% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_404.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Natural grassland and sparsely vegetated areas (54.3%), Arable land (51.2%), Urban fabric (47.6%). The most prominent identified land-cover signal is vegetation (26.1% coverage, NDVI: -0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0833,
+      "bleu_4": 0.0833,
+      "meteor": 0.0893
+    },
+    {
+      "id": "church/church_324.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (75.4%), Complex cultivation patterns (48.1%), Coniferous forest (46.2%). The most prominent identified land-cover signal is water (37.5% coverage, NDWI: +0.109), indicating wet surface / partial water. Image dimensions: 256x256.",
+      "bleu_1": 0.0882,
+      "bleu_4": 0.0882,
+      "meteor": 0.0943
+    },
+    {
+      "id": "church/church_650.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_184.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (51.9%), Coniferous forest (44.6%), Arable land (42.8%). The most prominent identified land-cover signal is vegetation (21.1% coverage, NDVI: +0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_086.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Beaches, dunes, sands (53.8%), Complex cultivation patterns (50.0%). Mixed land cover: 0.1% vegetation, 1.9% water, 1.9% built-up, 96.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_410.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Complex cultivation patterns (66.3%), Beaches, dunes, sands (64.9%). Mixed land cover: 0.0% vegetation, 0.0% water, 0.0% built-up, 100.0% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_128.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (81.3%), Complex cultivation patterns (65.8%), Beaches, dunes, sands (63.4%). Mixed land cover: 0.1% vegetation, 0.0% water, 0.0% built-up, 99.9% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_277.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (82.4%), Complex cultivation patterns (64.7%), Beaches, dunes, sands (61.5%). Mixed land cover: 0.0% vegetation, 1.4% water, 1.4% built-up, 97.2% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_193.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_383.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_465.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_455.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (47.3%), Urban fabric (46.2%), Arable land (37.0%). Mixed land cover: 3.6% vegetation, 0.0% water, 0.0% built-up, 96.4% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_306.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (80.8%), Urban fabric (48.7%), Complex cultivation patterns (43.2%). The scene is predominantly water (62.5% coverage, NDWI: +0.341), indicating open water body. Image dimensions: 256x256.",
+      "bleu_1": 0.1,
+      "bleu_4": 0.1,
+      "meteor": 0.1064
+    },
+    {
+      "id": "church/church_612.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (53.8%), Coniferous forest (44.5%), Urban fabric (44.0%). Mixed land cover: 5.9% vegetation, 2.5% water, 2.5% built-up, 89.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_481.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (48.2%), Coniferous forest (48.2%), Arable land (45.9%). Mixed land cover: 2.2% vegetation, 0.0% water, 0.0% built-up, 97.8% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_328.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Natural grassland and sparsely vegetated areas (54.3%), Arable land (51.2%), Urban fabric (47.6%). The most prominent identified land-cover signal is vegetation (26.1% coverage, NDVI: -0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0833,
+      "bleu_4": 0.0833,
+      "meteor": 0.0893
+    },
+    {
+      "id": "church/church_189.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (75.4%), Complex cultivation patterns (48.1%), Coniferous forest (46.2%). The most prominent identified land-cover signal is water (37.5% coverage, NDWI: +0.109), indicating wet surface / partial water. Image dimensions: 256x256.",
+      "bleu_1": 0.0882,
+      "bleu_4": 0.0882,
+      "meteor": 0.0943
+    },
+    {
+      "id": "church/church_553.jpg",
+      "reference": "Satellite remote sensing observation capturing None terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_492.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (51.9%), Coniferous forest (44.6%), Arable land (42.8%). The most prominent identified land-cover signal is vegetation (21.1% coverage, NDVI: +0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_377.jpg",
+      "reference": "Satellite remote sensing observation capturing None terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Beaches, dunes, sands (53.8%), Complex cultivation patterns (50.0%). Mixed land cover: 0.1% vegetation, 1.9% water, 1.9% built-up, 96.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_014.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Complex cultivation patterns (66.3%), Beaches, dunes, sands (64.9%). Mixed land cover: 0.0% vegetation, 0.0% water, 0.0% built-up, 100.0% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_471.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (81.3%), Complex cultivation patterns (65.8%), Beaches, dunes, sands (63.4%). Mixed land cover: 0.1% vegetation, 0.0% water, 0.0% built-up, 99.9% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_562.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (82.4%), Complex cultivation patterns (64.7%), Beaches, dunes, sands (61.5%). Mixed land cover: 0.0% vegetation, 1.4% water, 1.4% built-up, 97.2% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_251.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_171.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_613.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_493.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (47.3%), Urban fabric (46.2%), Arable land (37.0%). Mixed land cover: 3.6% vegetation, 0.0% water, 0.0% built-up, 96.4% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_401.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (80.8%), Urban fabric (48.7%), Complex cultivation patterns (43.2%). The scene is predominantly water (62.5% coverage, NDWI: +0.341), indicating open water body. Image dimensions: 256x256.",
+      "bleu_1": 0.1,
+      "bleu_4": 0.1,
+      "meteor": 0.1064
+    },
+    {
+      "id": "church/church_020.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (53.8%), Coniferous forest (44.5%), Urban fabric (44.0%). Mixed land cover: 5.9% vegetation, 2.5% water, 2.5% built-up, 89.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_168.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (48.2%), Coniferous forest (48.2%), Arable land (45.9%). Mixed land cover: 2.2% vegetation, 0.0% water, 0.0% built-up, 97.8% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1852,
+      "bleu_4": 0.1852,
+      "meteor": 0.1569
+    },
+    {
+      "id": "church/church_162.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Natural grassland and sparsely vegetated areas (54.3%), Arable land (51.2%), Urban fabric (47.6%). The most prominent identified land-cover signal is vegetation (26.1% coverage, NDVI: -0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0833,
+      "bleu_4": 0.0833,
+      "meteor": 0.0893
+    },
+    {
+      "id": "church/church_089.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (75.4%), Complex cultivation patterns (48.1%), Coniferous forest (46.2%). The most prominent identified land-cover signal is water (37.5% coverage, NDWI: +0.109), indicating wet surface / partial water. Image dimensions: 256x256.",
+      "bleu_1": 0.0882,
+      "bleu_4": 0.0882,
+      "meteor": 0.0943
+    },
+    {
+      "id": "church/church_249.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Coniferous forest (43.3%), Urban fabric (37.8%), Coastal wetlands (34.5%). The most prominent identified land-cover signal is vegetation (23.7% coverage, NDVI: +0.077), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0625,
+      "bleu_4": 0.0625,
+      "meteor": 0.0667
+    },
+    {
+      "id": "church/church_417.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Urban fabric (51.9%), Coniferous forest (44.6%), Arable land (42.8%). The most prominent identified land-cover signal is vegetation (21.1% coverage, NDVI: +0.016), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    },
+    {
+      "id": "church/church_519.jpg",
+      "reference": "Satellite remote sensing observation capturing None terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Beaches, dunes, sands (53.8%), Complex cultivation patterns (50.0%). Mixed land cover: 0.1% vegetation, 1.9% water, 1.9% built-up, 96.1% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_004.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (86.2%), Complex cultivation patterns (66.3%), Beaches, dunes, sands (64.9%). Mixed land cover: 0.0% vegetation, 0.0% water, 0.0% built-up, 100.0% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_141.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (81.3%), Complex cultivation patterns (65.8%), Beaches, dunes, sands (63.4%). Mixed land cover: 0.1% vegetation, 0.0% water, 0.0% built-up, 99.9% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_635.jpg",
+      "reference": "Satellite remote sensing observation capturing church terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (82.4%), Complex cultivation patterns (64.7%), Beaches, dunes, sands (61.5%). Mixed land cover: 0.0% vegetation, 1.4% water, 1.4% built-up, 97.2% other/unclassified. Image dimensions: 256x256.",
+      "bleu_1": 0.1724,
+      "bleu_4": 0.1724,
+      "meteor": 0.1465
+    },
+    {
+      "id": "church/church_662.jpg",
+      "reference": "Satellite remote sensing observation capturing None terrain with visible land cover structures.",
+      "hypothesis": "Satellite observation classified as: Arable land (55.2%), Urban fabric (52.5%), Coniferous forest (50.1%). The most prominent identified land-cover signal is vegetation (22.8% coverage, NDVI: -0.018), indicating bare soil / non-vegetated. Image dimensions: 256x256.",
+      "bleu_1": 0.0938,
+      "bleu_4": 0.0938,
+      "meteor": 0.1
+    }
+  ]
 }

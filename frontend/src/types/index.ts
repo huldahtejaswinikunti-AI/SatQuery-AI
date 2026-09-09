@@ -45,6 +45,8 @@ export interface AnalysisResult {
   confidence_tag: string;
   confidence_score?: number | null;
   overlay?: string | null; // base64 data URI
+  model_calibration?: 'calibrated' | 'untrained_fallback' | string;
+  spectral_summary?: Record<string, any>;
   verified_facts?: Record<string, any>;
   consensus_score?: number | null;
   change_direction?: string | null;

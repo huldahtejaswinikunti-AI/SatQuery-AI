@@ -8,21 +8,24 @@ interface NavProps {
 }
 
 export const Nav: React.FC<NavProps> = ({ activeDomain, onSelectDomain }) => {
-  const [calibration, setCalibration] = useState<'calibrated' | 'untrained_fallback' | 'loading'>('loading');
+  const [calibration, setCalibration] = useState<'calibrated' | 'untrained_fallback' | 'unknown' | 'loading'>('loading');
 
   useEffect(() => {
     checkHealth()
       .then((data: any) => {
         if (data.classifier_calibration === 'untrained_fallback' || data.status === 'UNCALIBRATED') {
           setCalibration('untrained_fallback');
-        } else {
+        } else if (data.classifier_calibration === 'calibrated' || data.status === 'READY') {
           setCalibration('calibrated');
+        } else {
+          setCalibration('unknown');
         }
       })
-      .catch(() => setCalibration('calibrated'));
+      .catch(() => setCalibration('unknown'));
   }, []);
 
   const isUncalibrated = calibration === 'untrained_fallback';
+  const isUnknown = calibration === 'unknown' || calibration === 'loading';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-[rgba(5,7,13,0.7)] border-b border-[var(--border-hairline)] transition-all">
@@ -77,18 +80,32 @@ export const Nav: React.FC<NavProps> = ({ activeDomain, onSelectDomain }) => {
           className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-colors ${
             isUncalibrated
               ? 'border-amber-500/50 bg-[rgba(245,158,11,0.12)] text-amber-300'
+              : isUnknown
+              ? 'border-zinc-700/50 bg-[rgba(24,24,27,0.6)] text-zinc-400'
               : 'border-[var(--border-hairline)] bg-[rgba(11,15,26,0.6)] text-[var(--text-primary)]'
           }`}
-          title={isUncalibrated ? 'Warning: Land-cover classifier checkpoint missing or uncalibrated' : 'All systems calibrated'}
+          title={
+            isUncalibrated
+              ? 'Warning: Land-cover classifier checkpoint missing or uncalibrated'
+              : isUnknown
+              ? 'Status: Connecting to telemetry server'
+              : 'All systems calibrated'
+          }
         >
           <span
             className={`w-2 h-2 rounded-full ${
-              isUncalibrated ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'
+              isUncalibrated
+                ? 'bg-amber-400 animate-ping'
+                : isUnknown
+                ? 'bg-zinc-500 animate-pulse'
+                : 'bg-emerald-400 animate-pulse'
             }`}
           />
           <span className="font-mono text-[10px] tracking-wider">
             {isUncalibrated
               ? 'SYSTEM READY · CLASSIFIER UNCALIBRATED'
+              : isUnknown
+              ? (calibration === 'loading' ? 'TELEMETRY INITIALIZING...' : 'SYSTEM STATUS · UNKNOWN')
               : 'SYSTEM READY · ISRO / SAC'}
           </span>
         </div>

@@ -94,11 +94,8 @@ def _load_image_for_specialist(path: str) -> np.ndarray:
 
 # --- Real Specialists with Grounded Fallbacks ---
 
-def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
-    """Visual Question Answering specialist — grounded in spectral indices."""
-    arr = _load_image_for_specialist(validated_input.images[0].path)
-    query = validated_input.query
-
+def answer_vqa_image(arr: np.ndarray, query: str) -> dict[str, Any]:
+    """Execute VQA on an image array with automatic GeoChat fallback to grounded reasoning."""
     # If GeoChat-7B is loaded in memory, use it
     from satquery.specialists import geochat_vqa
     if getattr(geochat_vqa, "_model", None) is not None:
@@ -124,16 +121,6 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
     water_frac = round(indices.water_fraction * 100, 1)
     built_frac = round(indices.built_up_fraction * 100, 1)
 
-    # Build spectral summary for downstream verifier & reports
-    spectral_summary = {
-        "ndvi_mean": round(ndvi, 4),
-        "ndwi_mean": round(ndwi, 4),
-        "ndbi_mean": round(ndbi, 4),
-        "vegetation_fraction": indices.vegetation_fraction,
-        "water_fraction": indices.water_fraction,
-        "built_up_fraction": indices.built_up_fraction,
-    }
-
     from satquery.perception.spectral_interpretation import (
         interpret_ndvi,
         interpret_ndwi,
@@ -141,9 +128,81 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
         describe_dominant_land_cover,
     )
 
+    spectral_summary = {
+        "ndvi_mean": round(ndvi, 4),
+        "ndwi_mean": round(ndwi, 4),
+        "ndbi_mean": round(ndbi, 4),
+        "vegetation_fraction": indices.vegetation_fraction,
+        "water_fraction": indices.water_fraction,
+        "built_up_fraction": indices.built_up_fraction,
+        "ndvi_label": interpret_ndvi(ndvi),
+        "ndwi_label": interpret_ndwi(ndwi),
+        "ndbi_label": interpret_ndbi(ndbi),
+    }
+
     # Query-aware answer generation using REAL measurements
     q_lower = query.lower()
-    if any(w in q_lower for w in ("water", "flood", "river", "sea", "ocean", "port", "coast", "lake")):
+    if "classes:" in q_lower or "one of the following" in q_lower:
+        # Extract candidate classes
+        candidates = []
+        if "classes:" in q_lower:
+            cand_part = q_lower.split("classes:", 1)[1]
+            if "answer" in cand_part:
+                cand_part = cand_part.split("answer", 1)[0]
+            candidates = [c.strip().strip(".\n ") for c in cand_part.split(",") if c.strip()]
+
+        # Check direct match of top-k predicted classes in candidates
+        chosen = None
+        predicted_classes = [t["class_name"] for t in top_k] + labels
+        for pred_cls in predicted_classes:
+            for cand in candidates:
+                if cand.lower() == pred_cls.lower():
+                    chosen = cand
+                    break
+            if chosen:
+                break
+
+        # Semantic / synonym mapping to remote sensing benchmark classes
+        if not chosen and candidates:
+            SYNONYMS = {
+                "urban fabric": ["dense residential", "medium residential", "sparse residential", "commercial area", "church"],
+                "industrial or commercial units": ["industrial area", "commercial area", "storage tank"],
+                "arable land": ["rectangular farmland", "circular farmland", "meadow"],
+                "complex cultivation patterns": ["rectangular farmland", "circular farmland", "terrace"],
+                "broad-leaved forest": ["forest"],
+                "coniferous forest": ["forest"],
+                "mixed forest": ["forest"],
+                "natural grassland and sparsely vegetated areas": ["meadow", "chaparral"],
+                "beaches, dunes, sands": ["desert", "beach"],
+                "inland waters": ["lake", "river"],
+                "marine waters": ["lake", "river"],
+                "inland wetlands": ["wetland"],
+                "coastal wetlands": ["wetland"],
+            }
+            for pred_cls in predicted_classes:
+                p_low = pred_cls.lower()
+                for syn in SYNONYMS.get(p_low, []):
+                    for cand in candidates:
+                        if syn == cand.lower():
+                            chosen = cand
+                            break
+                    if chosen:
+                        break
+                if chosen:
+                    break
+
+                # Word overlap between pred_cls and candidate
+                p_words = set(w for w in p_low.split() if len(w) > 3)
+                for cand in candidates:
+                    c_words = set(w for w in cand.lower().split() if len(w) > 3)
+                    if p_words.intersection(c_words):
+                        chosen = cand
+                        break
+                if chosen:
+                    break
+
+        ans = chosen or (candidates[0] if candidates else (top_k[0]["class_name"] if top_k else "farmland"))
+    elif any(w in q_lower for w in ("water", "flood", "river", "sea", "ocean", "port", "coast", "lake")):
         ans = (
             f"Water analysis: NDWI index measures {ndwi:+.3f} with {water_frac}% "
             f"of the scene classified as water bodies. "
@@ -188,10 +247,14 @@ def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
     }
 
 
-def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
-    """Single-image captioning specialist — richly grounded in spectral data."""
+def run_vqa(validated_input: ValidatedInput) -> dict[str, Any]:
+    """Visual Question Answering specialist — grounded in spectral indices."""
     arr = _load_image_for_specialist(validated_input.images[0].path)
+    return answer_vqa_image(arr, validated_input.query)
 
+
+def generate_grounded_caption(arr: np.ndarray) -> dict[str, Any]:
+    """Generate grounded satellite image caption via trained classifier and spectral indices."""
     # If GeoChat-7B is loaded in memory, use it
     from satquery.specialists import geochat_vqa
     if getattr(geochat_vqa, "_model", None) is not None:
@@ -217,6 +280,13 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
     water_frac = round(indices.water_fraction * 100, 1)
     built_frac = round(indices.built_up_fraction * 100, 1)
 
+    from satquery.perception.spectral_interpretation import (
+        interpret_ndvi,
+        interpret_ndwi,
+        interpret_ndbi,
+        describe_dominant_land_cover,
+    )
+
     spectral_summary = {
         "ndvi_mean": round(ndvi, 4),
         "ndwi_mean": round(ndwi, 4),
@@ -224,6 +294,9 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
         "vegetation_fraction": indices.vegetation_fraction,
         "water_fraction": indices.water_fraction,
         "built_up_fraction": indices.built_up_fraction,
+        "ndvi_label": interpret_ndvi(ndvi),
+        "ndwi_label": interpret_ndwi(ndwi),
+        "ndbi_label": interpret_ndbi(ndbi),
     }
 
     # Build multi-sentence caption from real measurements
@@ -232,9 +305,6 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
     ) if top_k else ", ".join(labels) if labels else "unclassified terrain"
 
     desc = f"Satellite observation classified as: {top_classes}."
-
-    # Dominant land type description using unified four-way composition logic
-    from satquery.perception.spectral_interpretation import describe_dominant_land_cover
     desc += " " + describe_dominant_land_cover(
         veg_pct=veg_frac,
         water_pct=water_frac,
@@ -258,6 +328,12 @@ def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
         "top_k": top_k,
         "model_calibration": preds.get("model_calibration", "calibrated"),
     }
+
+
+def run_caption(validated_input: ValidatedInput) -> dict[str, Any]:
+    """Single-image captioning specialist — richly grounded in spectral data."""
+    arr = _load_image_for_specialist(validated_input.images[0].path)
+    return generate_grounded_caption(arr)
 
 
 def run_grounding(validated_input: ValidatedInput) -> dict[str, Any]:

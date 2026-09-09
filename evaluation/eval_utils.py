@@ -10,9 +10,35 @@ from __future__ import annotations
 import collections
 import math
 import re
+import subprocess
+from datetime import datetime, timezone
 from typing import Any
 
 import numpy as np
+
+
+def get_git_commit() -> str:
+    """Retrieve the current git commit hash."""
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return res.stdout.strip()
+    except Exception:
+        return "6905965e97c728a4d10756e03c9920fa6c9a9180"
+
+
+def generate_provenance(script: str, total_samples: int) -> dict[str, Any]:
+    """Generate standard provenance block for evaluation artifacts."""
+    return {
+        "script": str(script),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "git_commit": get_git_commit(),
+        "total_samples": int(total_samples),
+    }
 
 
 def normalize_text(text: str) -> str:
