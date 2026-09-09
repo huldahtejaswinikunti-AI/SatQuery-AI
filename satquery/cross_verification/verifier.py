@@ -13,7 +13,7 @@ class VerificationResult:
     explanation: str
 
 
-def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | None) -> dict[str, Any]:
+def verify(vlm_claim: dict[str, Any], deterministic_signal: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Cross-verifies a Vision-Language Model (VLM) claim against physical, deterministic
     sensor observations (Sentinel-2 spectral indices and Sentinel-1 SAR backscatter).

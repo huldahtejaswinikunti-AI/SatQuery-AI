@@ -71,12 +71,14 @@ def _run_pipeline_inner(
     from satquery.pipeline.report_generator import generate_report
 
     # ---- Step 1: Validate -----------------------------------------------
+    from satquery.pipeline.executor import cache_image_array
     image_dicts = []
-    for img_arr, meta in zip(images, metas):
+    for idx, (img_arr, meta) in enumerate(zip(images, metas)):
         d = dict(meta)
         # Ensure required keys exist for the validator
         if "path" not in d:
-            d["path"] = d.get("filename", "upload.png")
+            d["path"] = d.get("filename", f"upload_{idx}.png")
+        cache_image_array(str(d["path"]), img_arr)
         if "band_count" not in d:
             d["band_count"] = 1 if img_arr.ndim == 2 else (
                 img_arr.shape[0] if img_arr.ndim == 3 and img_arr.shape[0] <= 16 else
@@ -87,6 +89,20 @@ def _run_pipeline_inner(
         if "height" not in d:
             d["height"] = img_arr.shape[0]
         image_dicts.append(d)
+
+    # For paired images, ensure acquisition timestamps exist for bi-temporal evaluation
+    if len(image_dicts) == 2:
+        from datetime import datetime, timedelta
+        for idx, d in enumerate(image_dicts):
+            if not d.get("timestamp"):
+                acq = d.get("acquisition_date")
+                if acq:
+                    try:
+                        d["timestamp"] = datetime.fromisoformat(str(acq).split("T")[0])
+                    except Exception:
+                        d["timestamp"] = datetime(2022, 1, 1) + timedelta(days=365 * idx)
+                else:
+                    d["timestamp"] = datetime(2022, 1, 1) + timedelta(days=365 * idx)
 
     validated = validate_input(image_dicts, query)
 
