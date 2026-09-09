@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { AnalysisResult, ObservationDomain, ObservationItem } from '../../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
-import { ShieldCheck, AlertCircle, FileText, Activity, Download, Check, Copy } from 'lucide-react';
+import { exportPdfReport } from '../../api/client';
+import { 
+  ShieldCheck, 
+  AlertCircle, 
+  FileText, 
+  Activity, 
+  Download, 
+  Check, 
+  Copy, 
+  ChevronDown, 
+  FileCode, 
+  Loader2 
+} from 'lucide-react';
 
 interface ReportPanelProps {
   domain: ObservationDomain;
@@ -19,6 +31,20 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
   error = null,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Error state
   if (error) {
@@ -129,19 +155,74 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
   const topK = facts.top_k;
   const changeSummary = facts.change_summary;
 
-  // Download Handler
-  const handleDownload = () => {
+  // Download Handlers
+  const getTimestamp = () => new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+  const handleDownloadMd = () => {
     const md = result.report_markdown || `# SatQuery AI - Scientific Analysis Report\n\n## Executive Summary\n${result.answer}\n\nConfidence: ${(confidenceScore * 100).toFixed(1)}%\n`;
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    a.download = `SatQuery_Report_${domain.toUpperCase()}_${timestamp}.md`;
+    a.download = `SatQuery_Report_${domain.toUpperCase()}_${getTimestamp()}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    setIsMenuOpen(false);
+  };
+
+  const handleDownloadJson = () => {
+    const exportData = {
+      mission: "SatQuery AI Remote Sensing Mission Intelligence",
+      domain,
+      timestamp: new Date().toISOString(),
+      confidence_assessment: {
+        score: confidenceScore,
+        tag: result.confidence_tag,
+        consensus_score: result.consensus_score,
+        semantic_consistency: result.semantic_consistency,
+      },
+      executive_summary: result.answer,
+      verified_facts: result.verified_facts,
+      spectral_analysis: spectral || null,
+      land_cover_ranking: topK || null,
+      bi_temporal_change: changeSummary || null,
+      execution_trace: result.trace,
+      input_metadata: result.metas || null,
+      raw_markdown_report: result.report_markdown || null,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SatQuery_Data_${domain.toUpperCase()}_${getTimestamp()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setIsMenuOpen(false);
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsPdfLoading(true);
+    try {
+      const blob = await exportPdfReport(result, result.answer || 'Multimodal Remote Sensing Analysis', result.metas);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SatQuery_Report_${domain.toUpperCase()}_${getTimestamp()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn('Backend PDF generation fallback triggered:', err);
+      window.print();
+    } finally {
+      setIsPdfLoading(false);
+      setIsMenuOpen(false);
+    }
   };
 
   const handleCopy = () => {
@@ -162,27 +243,104 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
           </h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <ConfidenceBadge
             domain={domain}
             confidenceScore={confidenceScore}
             isVerified={!isLunar}
           />
 
-          {/* Download Report Button */}
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-[rgba(77,184,255,0.12)] hover:bg-[var(--accent-verified)] text-[var(--accent-verified)] hover:text-[var(--bg-void)] border border-[rgba(77,184,255,0.3)] transition-all text-[10px] font-mono font-bold tracking-wider cursor-pointer"
-            title="Download Comprehensive Markdown Report"
-          >
-            <Download className="w-3 h-3" />
-            <span>DOWNLOAD</span>
-          </button>
+          {/* Quick Format Pills */}
+          <div className="flex items-center rounded border border-[var(--border-hairline)] bg-[var(--bg-panel-elevated)] p-0.5">
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isPdfLoading}
+              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--accent-verified)] hover:bg-[rgba(77,184,255,0.15)] rounded transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1"
+              title="Download Executive PDF"
+            >
+              {isPdfLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : null}
+              <span>PDF</span>
+            </button>
+            <span className="text-[var(--border-hairline)]">|</span>
+            <button
+              onClick={handleDownloadMd}
+              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
+              title="Download Markdown Report"
+            >
+              MD
+            </button>
+            <span className="text-[var(--border-hairline)]">|</span>
+            <button
+              onClick={handleDownloadJson}
+              className="px-2 py-0.5 text-[9px] font-mono font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)] rounded transition-colors cursor-pointer"
+              title="Download JSON Telemetry"
+            >
+              JSON
+            </button>
+          </div>
+
+          {/* Export Dropdown Menu Button */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded bg-[rgba(77,184,255,0.12)] hover:bg-[var(--accent-verified)] text-[var(--accent-verified)] hover:text-[var(--bg-void)] border border-[rgba(77,184,255,0.3)] transition-all text-[10px] font-mono font-bold tracking-wider cursor-pointer"
+              title="Export Report (PDF / MD / JSON)"
+            >
+              <Download className="w-3 h-3" />
+              <span>EXPORT</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-52 rounded bg-[var(--bg-panel-elevated)] border border-[var(--border-hairline)] shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="px-3 py-1.5 border-b border-[var(--border-hairline)]">
+                  <span className="font-mono text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">
+                    Select Export Format
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={isPdfLoading}
+                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <FileText className="w-3.5 h-3.5 text-rose-400" />
+                  <div className="flex flex-col">
+                    <span className="font-semibold">PDF Document</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.pdf (Executive Briefing)</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleDownloadMd}
+                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="flex flex-col">
+                    <span className="font-semibold">Markdown Report</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.md (Tables & Evidence)</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleDownloadJson}
+                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2.5 text-[var(--text-primary)] hover:bg-[rgba(77,184,255,0.12)] hover:text-[var(--accent-verified)] transition-colors cursor-pointer"
+                >
+                  <FileCode className="w-3.5 h-3.5 text-amber-400" />
+                  <div className="flex flex-col">
+                    <span className="font-semibold">Structured Telemetry</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">.json (Trace & Metrics)</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Copy Report Button */}
           <button
             onClick={handleCopy}
-            className="p-1 rounded bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+            className="p-1.5 rounded bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
             title="Copy Report to Clipboard"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

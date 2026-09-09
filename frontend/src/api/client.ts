@@ -35,3 +35,20 @@ export async function runAnalysis(
   }
   return res.json();
 }
+
+export async function exportPdfReport(
+  result: AnalysisResult,
+  query: string,
+  imagesMeta?: any[]
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/export-pdf`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ result, query, images_meta: imagesMeta }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'PDF generation request failed');
+  }
+  return res.blob();
+}

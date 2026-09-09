@@ -31,6 +31,7 @@ from app.pipeline_bridge import (
     run_lunar_pipeline,
     run_batch_pipeline,
 )
+from app.pdf_report import generate_pdf_report
 from satquery.pipeline.report_generator import generate_report
 from satquery.utils.geo_io import load_image_as_array
 from satquery.utils.image_utils import to_display_rgb
@@ -96,6 +97,12 @@ class BatchItemRequest(BaseModel):
 class BatchRequest(BaseModel):
     mode: str = "earth"
     items: List[BatchItemRequest]
+
+
+class ExportPdfRequest(BaseModel):
+    result: dict[str, Any]
+    query: str = ""
+    images_meta: Optional[List[dict[str, Any]]] = None
 
 
 # ---- Endpoints -----------------------------------------------------------
@@ -262,6 +269,25 @@ def analyze(req: AnalyzeRequest) -> dict[str, Any]:
         "metas": clean_metas,
         "report_markdown": report_md,
     }
+
+
+@app.post("/api/export-pdf")
+def export_pdf(req: ExportPdfRequest):
+    """Generate and stream an executive PDF report."""
+    try:
+        pdf_bytes = generate_pdf_report(req.result, req.query, req.images_meta)
+        if not pdf_bytes:
+            raise HTTPException(status_code=500, detail="Failed to synthesize PDF bytes")
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="SatQuery_Analysis_Report.pdf"'},
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("PDF export error: %s", exc)
+        raise HTTPException(status_code=500, detail=f"PDF export failed: {exc}")
 
 
 @app.post("/api/batch")
