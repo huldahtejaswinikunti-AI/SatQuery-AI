@@ -67,48 +67,56 @@ The SatQuery AI pipeline executes a deterministic, fail-safe data flow from user
 ```mermaid
 flowchart TD
     subgraph INGESTION["1. Ingestion & Mission Configuration"]
-        UQ[User Natural Language Query: Custom Text or Contextual Presets] --> IV[Input Validator & Normalizer]
-        IMG[Image Inputs: Curated Benchmarks OR User Custom GeoTIFF / PNG / JPEG Uploads] --> UP[/api/upload Decoder & CRS Extractor]
+        UQ["User Natural Language Query (Custom Text or Presets)"] --> IV["Input Validator & Normalizer"]
+        IMG["Image Inputs: Benchmarks or Custom GeoTIFF / PNG / JPEG"] --> UP["API Raster Decoder & CRS Extractor"]
         UP --> IV
-        IV -->|Format, Band & Co-Registration Checks| AR[Deterministic Agentic Task Router]
-        IV -->|Invalid Inputs / Dimension Mismatch| ERR[Actionable Diagnostics & Error State]
+        IV -->|"Format, Band & Co-Registration Checks"| AR["Deterministic Agentic Task Router"]
+        IV -->|"Invalid Inputs / Dimension Mismatch"| ERR["Actionable Diagnostics & Error State"]
     end
 
     subgraph ROUTING["2. Agentic Task Decomposition"]
-        AR -->|Keyword & Modality Analysis| TR1[Single-Image VQA & Captioning]
-        AR -->|Keyword & Modality Analysis| TR2[Text-Guided Region Grounding]
-        AR -->|Keyword & Modality Analysis| TR3[Bi-Temporal Change Detection]
-        AR -->|Keyword & Modality Analysis| TR4[Optical-SAR Cross-Modal Fusion]
-        AR -->|Keyword & Modality Analysis| TR5[Lunar Morphological Specialist]
+        AR -->|"Keyword & Modality Analysis"| TR1["Single-Image VQA & Captioning"]
+        AR -->|"Keyword & Modality Analysis"| TR2["Text-Guided Region Grounding"]
+        AR -->|"Keyword & Modality Analysis"| TR3["Bi-Temporal Change Detection"]
+        AR -->|"Keyword & Modality Analysis"| TR4["Optical-SAR Cross-Modal Fusion"]
+        AR -->|"Keyword & Modality Analysis"| TR5["Lunar Morphological Specialist"]
     end
 
     subgraph SPECIALISTS["3. Multi-Model Specialist Layer"]
-        TR1 --> GC[GeoChat-7B + LoRA Adapter]
-        TR2 --> CS[CLIPSeg Open-Vocabulary Segmenter]
-        TR3 --> TCD[TinyCD Siamese Change Detector]
-        TR3 --> LC[ResNet-18 Land Cover Classifier BEN-19]
-        TR4 --> SAR_OPT[Multi-Modal Band Alignment Engine]
-        TR5 --> LMR[Chandrayaan-2 Lunar Morphology Analyzer]
+        TR1 --> GC["GeoChat-7B + LoRA Adapter"]
+        TR2 --> CS["CLIPSeg Open-Vocabulary Segmenter"]
+        TR3 --> TCD["TinyCD Siamese Change Detector"]
+        TR3 --> LC["ResNet-18 Land Cover Classifier BEN-19"]
+        TR4 --> SAR_OPT["Multi-Modal Band Alignment Engine"]
+        TR5 --> LMR["Chandrayaan-2 Lunar Morphology Analyzer"]
     end
 
     subgraph PHYSICAL_LAYER["4. Deterministic Physics & Spectral Perception Layer"]
-        IMG --> SPEC[Spectral Indices: NDVI / NDWI / NDBI via NumPy]
-        IMG --> SAR_PHYS[SAR VV/VH Backscatter Thresholding]
-        IMG --> LUNAR_RAD[Optical Albedo & Shadow Fraction Geometry]
+        IMG --> SPEC["Spectral Indices: NDVI / NDWI / NDBI via NumPy"]
+        IMG --> SAR_PHYS["SAR VV/VH Backscatter Thresholding"]
+        IMG --> LUNAR_RAD["Optical Albedo & Shadow Fraction Geometry"]
     end
 
     subgraph VERIFICATION["5. Cross-Verification & Hallucination Guardrail Engine"]
-        GC & CS & TCD & LC & SAR_OPT & LMR --> XV[Cross-Verification Engine]
-        SPEC & SAR_PHYS & LUNAR_RAD --> XV
-        XV -->|Matrix Matching| CONF[Calibrated Confidence Scorer]
-        XV -->|Audited Output| VF[Verified Factual Assertions JSON]
+        GC --> XV["Cross-Verification Engine"]
+        CS --> XV
+        TCD --> XV
+        LC --> XV
+        SAR_OPT --> XV
+        LMR --> XV
+        SPEC --> XV
+        SAR_PHYS --> XV
+        LUNAR_RAD --> XV
+        XV -->|"Matrix Matching"| CONF["Calibrated Confidence Scorer"]
+        XV -->|"Audited Output"| VF["Verified Factual Assertions JSON"]
     end
 
     subgraph REPORTING["6. Synthesis & Mission Presentation"]
-        VF & CONF --> PE[Factual Phrasing & Report Engine]
-        PE --> MD[Downloadable Intelligence Briefing Markdown / PDF]
-        PE --> HUD[Cinematic React / Three.js Mission Workstation]
-        PE --> TRACE[Full Auditable Execution Trace JSON]
+        VF --> PE["Factual Phrasing & Report Engine"]
+        CONF --> PE
+        PE --> MD["Downloadable Intelligence Briefing Markdown / PDF"]
+        PE --> HUD["Cinematic React / Three.js Mission Workstation"]
+        PE --> TRACE["Full Auditable Execution Trace JSON"]
     end
 ```
 
