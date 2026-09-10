@@ -51,9 +51,11 @@ Whether analyzing Sentinel optical imagery, all-weather radar penetration from S
    Our phrasing engine (Phi-3 / Llama-3.2 / deterministic reporter) never inspects raw pixels directly to count objects or guess percentages. It strictly receives validated JSON facts computed by our specialist models and deterministic pipelines, completely eliminating numerical hallucinations.
 3. **Dual-Domain Intelligence (Earth & Planetary Lunar):**
    SatQuery AI supports both terrestrial satellite workflows (optical, SAR, optical-SAR fusion, bi-temporal change detection) and **Chandrayaan-2 / LROC lunar surface intelligence** (PSR cold-trap identification, asymmetric crater ejecta tracking, boulder distribution, and terraced crater wall morphology).
-4. **Auditable Execution Trace & One-Click Report Generation:**
+4. **Interactive Mission Query Console & Custom Raster Ingestion:**
+   Analysts can input arbitrary free-form natural language queries or trigger contextual command presets directly above the dual-panel observation workspace (`Ctrl+Enter` shortcut, inline prompt clearing). Beyond benchmark scenes, the workstation features an enterprise drag-and-drop raster ingestion engine supporting single and paired **GeoTIFF (`.tif`, `.geotiff`), PNG, and JPEG** rasters with automated CRS coordinate decoding, spatial resolution detection, and live image normalization.
+5. **Auditable Execution Trace & One-Click Report Generation:**
    Every inference run yields a complete, machine-readable JSON execution trace disclosing the selected pipeline, active specialists, parameters, and verification status. Analysts can export executive-grade Markdown and PDF mission briefing reports with a single click.
-5. **Cinematic 3D Mission Workstation:**
+6. **Cinematic 3D Mission Workstation:**
    Built with Three.js and React, the frontend offers a space-mission operations environment featuring multi-layered 3D WebGL visualizations of Earth and the Moon, dual-channel RGB/SAR split viewers, and real-time telemetry HUDs.
 
 ---
@@ -65,8 +67,9 @@ The SatQuery AI pipeline executes a deterministic, fail-safe data flow from user
 ```mermaid
 flowchart TD
     subgraph INGESTION["1. Ingestion & Mission Configuration"]
-        UQ[User Natural Language Query] --> IV[Input Validator & Normalizer]
-        IMG[Image Inputs: Single / Optical-SAR / Bi-Temporal / Lunar] --> IV
+        UQ[User Natural Language Query: Custom Text or Contextual Presets] --> IV[Input Validator & Normalizer]
+        IMG[Image Inputs: Curated Benchmarks OR User Custom GeoTIFF / PNG / JPEG Uploads] --> UP[/api/upload Decoder & CRS Extractor]
+        UP --> IV
         IV -->|Format, Band & Co-Registration Checks| AR[Deterministic Agentic Task Router]
         IV -->|Invalid Inputs / Dimension Mismatch| ERR[Actionable Diagnostics & Error State]
     end
@@ -140,6 +143,9 @@ $$\text{NDWI} = \frac{\rho_{\text{Green}} - \rho_{\text{NIR}}}{\rho_{\text{Green
 $$\text{NDBI} = \frac{\rho_{\text{SWIR}} - \rho_{\text{NIR}}}{\rho_{\text{SWIR}} + \rho_{\text{NIR}}} \quad (\text{Impervious Surface / Built-up Mapping})$$
 
 $$\sigma^0 (\text{dB}) = 10 \cdot \log_{10}(\text{DN}^2) - A_0 \quad (\text{SAR Calibrated Radar Backscatter})$$
+
+> **Physical SWIR Decoupling Guardrail:**  
+> NDBI and built-up index delineations strictly require physical Short-Wave Infrared ($\rho_{\text{SWIR}}$) reflectance. On 3-band (RGB) or 4-band (RGB+NIR) inputs where SWIR is physically absent, SatQuery AI explicitly suppresses computation and reports `Unavailable (requires SWIR band)` rather than aliasing green/NIR channels or generating duplicate water/built-up coverage percentages.
 
 ---
 
@@ -252,9 +258,26 @@ streamlit run app/main.py
 
 ### 5. Running the Test Suite
 ```powershell
-# Execute the comprehensive test suite (all 122+ unit and integration tests)
+# Execute the comprehensive test suite (all 145 unit and integration tests)
 python -m pytest -q
 ```
+
+---
+
+## 🖥️ Interactive Mission Workstation Operations
+
+### A. Natural Language Querying (Custom User Input)
+The **Mission Query Console** is positioned prominently above the dual-panel visual workstation:
+- **Free-Form Questions:** Enter arbitrary complex prompts (e.g., *"Locate industrial warehouse facilities and compute NDVI spectral vegetation density"* or *"Analyze crater rim morphology and detect polar shadow traps"*).
+- **Contextual Command Presets:** One-click chips for Earth RS (`+ Locate Buildings`, `+ Find Water Bodies`, `+ Describe Scene`, `+ Detect Changes`, `+ Spectral Vegetation`, `+ Identify Roads`) and Chandrayaan-2 Lunar RS (`+ Find Craters`, `+ Crater Morphology`, `+ Analyze Regolith`, `+ Shadow & PSRs`, `+ Ejecta Blankets`, `+ Compare Terrains`).
+- **Keyboard Accelerators:** Press `Ctrl+Enter` to dispatch queries directly to the autonomous pipeline.
+- **Inline Clear:** Click `✕ Clear` to reset prompts instantly.
+
+### B. Custom Satellite Raster Upload (GeoTIFF / PNG / JPEG)
+- Switch the observation source mode using the tab: `[ 📤 Upload Custom Rasters ]`.
+- **Drag & Drop / File Picker:** Ingest 1 raster (single scene analysis) or 2 rasters (cross-modal optical+SAR fusion or pre/post disaster bi-temporal change).
+- **Automated Spatial Telemetry:** Decodes raster metadata on ingestion, detecting width, height, band count, CRS coordinate reference systems, and radiometric profile.
+- **Multi-Raster Inspection:** When 2 rasters are uploaded, easily toggle between Image 1 and Image 2 in the high-resolution viewer while both are processed by the multimodal pipeline.
 
 ---
 
