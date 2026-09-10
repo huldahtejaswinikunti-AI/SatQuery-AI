@@ -19,7 +19,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
@@ -55,6 +55,8 @@ app.add_middleware(
 )
 
 DEMO_BASE = _ROOT / "data" / "demo_samples"
+UPLOAD_DIR = _ROOT / "data" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 EARTH_QUERIES_PATH = _ROOT / "demo" / "demo_queries.json"
 LUNAR_QUERIES_PATH = _ROOT / "demo" / "lunar_demo_queries.json"
 
@@ -67,11 +69,21 @@ def _load_json_catalog(path: Path) -> list[dict]:
 
 
 def _resolve_image_path(rel_path: str, is_lunar: bool = False) -> Optional[Path]:
+    p = Path(rel_path)
+    if p.is_absolute() and p.exists():
+        return p
+    # Check upload and data directory
+    if (_ROOT / "data" / rel_path).exists():
+        return _ROOT / "data" / rel_path
+    if (UPLOAD_DIR / rel_path).exists():
+        return UPLOAD_DIR / rel_path
     base = DEMO_BASE / "lunar" if is_lunar else DEMO_BASE
     candidate = base / rel_path
     if candidate.exists():
         return candidate
     base_name = Path(rel_path).name
+    if (UPLOAD_DIR / base_name).exists():
+        return UPLOAD_DIR / base_name
     for subdir in ["", "single_optical", "single_sar", "optical_sar_pairs", "bitemporal_pairs", "lunar"]:
         cand = DEMO_BASE / subdir / base_name
         if cand.exists():
@@ -184,6 +196,67 @@ def serve_image(file_path: str, domain: str = "earth") -> Response:
     except Exception as exc:
         logger.exception("Failed to render raster image: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/upload")
+async def upload_rasters(
+    files: List[UploadFile] = File(...),
+    domain: str = Query("earth", pattern="^(earth|lunar)$"),
+) -> dict[str, Any]:
+    """Upload custom satellite raster files (GeoTIFF, TIFF, PNG, JPEG) and parse metadata."""
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided for upload.")
+
+    uploaded_items = []
+    for idx, uploaded in enumerate(files):
+        filename = uploaded.filename or f"custom_raster_{idx}.png"
+        ext = Path(filename).suffix.lower()
+        if ext not in [".tif", ".tiff", ".geotiff", ".png", ".jpg", ".jpeg"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported format '{ext}'. Allowed formats: .tif, .tiff, .png, .jpg, .jpeg",
+            )
+
+        dest_path = UPLOAD_DIR / filename
+        content = await uploaded.read()
+        dest_path.write_bytes(content)
+
+        try:
+            arr, meta = load_image_as_array(str(dest_path))
+            h, w = arr.shape[:2]
+            bands = meta.get("band_count", arr.shape[2] if arr.ndim == 3 else 1)
+            fmt = meta.get("format", ext.replace(".", "").upper())
+            crs = str(meta.get("crs") or "Local Grid / WGS 84")
+
+            modality = "SAR" if bands <= 2 else "Optical"
+            if domain == "lunar":
+                modality = "Lunar OHRC/TMC-2"
+
+            uploaded_items.append({
+                "id": f"upload_{idx}_{dest_path.stem}",
+                "filename": filename,
+                "file": f"uploads/{filename}",
+                "name": Path(filename).stem.replace("_", " ").title(),
+                "sensor": f"User Custom {modality} ({fmt})",
+                "resolution": "User GSD" if domain == "lunar" else ("10.0 m" if "optical" in modality.lower() else "Native Resolution"),
+                "date": "Custom Dataset",
+                "location": f"CRS: {crs}",
+                "provenance": f"User Upload ({fmt} · {w}x{h} · {bands}b)",
+                "width": w,
+                "height": h,
+                "band_count": bands,
+                "format": fmt,
+            })
+        except Exception as exc:
+            dest_path.unlink(missing_ok=True)
+            logger.exception("Failed to parse uploaded raster: %s", exc)
+            raise HTTPException(status_code=400, detail=f"Failed to decode raster '{filename}': {exc}")
+
+    return {
+        "status": "success",
+        "count": len(uploaded_items),
+        "items": uploaded_items,
+    }
 
 
 @app.post("/api/analyze")

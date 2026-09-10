@@ -151,7 +151,6 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({
   }
 
   // Active Scientific Report
-  const isLunar = domain === 'lunar';
   const confidenceScore = result.confidence_score !== undefined && result.confidence_score !== null
     ? result.confidence_score
     : (result.consensus_score ?? 0.85);

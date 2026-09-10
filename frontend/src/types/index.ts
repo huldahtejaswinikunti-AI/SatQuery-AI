@@ -4,6 +4,7 @@ export interface ObservationItem {
   id: string;
   file?: string;
   files?: string[];
+  filename?: string;
   name: string;
   sensor: string;
   resolution?: string;

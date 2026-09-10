@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import type { AnalysisResult, ObservationDomain, Scenario } from './types';
+import type { AnalysisResult, ObservationDomain, Scenario, ObservationItem } from './types';
 import { fetchScenarios, runAnalysis } from './api/client';
 import { PageBackground } from './components/layout/PageBackground';
 import { Nav } from './components/layout/Nav';
@@ -16,6 +16,11 @@ export const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Custom Raster Upload State
+  const [sourceMode, setSourceMode] = useState<'archival' | 'custom'>('archival');
+  const [customItems, setCustomItems] = useState<ObservationItem[]>([]);
+  const [selectedCustomIdx, setSelectedCustomIdx] = useState(0);
+
   // Load scenarios whenever domain changes
   useEffect(() => {
     let isMounted = true;
@@ -27,7 +32,7 @@ export const App: React.FC = () => {
         setSelectedItemIdx(0);
         setResult(null);
         setError(null);
-        if (scens.length > 0) {
+        if (scens.length > 0 && sourceMode === 'archival') {
           const firstItem = scens[0]?.sample_items?.[0];
           setQuery(firstItem?.query || scens[0]?.query || '');
         }
@@ -40,8 +45,9 @@ export const App: React.FC = () => {
     };
   }, [domain]);
 
-  // Sync query when scenario or selected image changes
+  // Sync query when scenario or selected image changes (in archival mode)
   useEffect(() => {
+    if (sourceMode !== 'archival') return;
     const scen = scenarios[selectedScenarioIdx];
     const item = scen?.sample_items?.[selectedItemIdx];
     if (item?.query) {
@@ -49,16 +55,66 @@ export const App: React.FC = () => {
     } else if (scen?.query) {
       setQuery(scen.query);
     }
-  }, [scenarios, selectedScenarioIdx, selectedItemIdx]);
+  }, [scenarios, selectedScenarioIdx, selectedItemIdx, sourceMode]);
+
+  // Domain change handler
+  const handleSelectDomain = (newDomain: ObservationDomain) => {
+    setDomain(newDomain);
+    setResult(null);
+    setError(null);
+    setCustomItems([]);
+    setSelectedCustomIdx(0);
+    setSourceMode('archival');
+  };
+
+  // Custom Upload Success Handler
+  const handleUploadSuccess = useCallback(
+    (items: ObservationItem[]) => {
+      setCustomItems(items);
+      setSelectedCustomIdx(0);
+      setResult(null);
+      setError(null);
+      if (items.length > 0) {
+        if (items[0].query) {
+          setQuery(items[0].query);
+        } else if (!query.trim() || scenarios.some((s) => s.query === query)) {
+          setQuery(
+            domain === 'lunar'
+              ? 'Detect prominent impact crater candidates across the lunar scene.'
+              : 'Describe the land use and dominant terrain features in this scene.'
+          );
+        }
+      }
+    },
+    [domain, query, scenarios]
+  );
+
+  // Clear Custom Uploads Handler
+  const handleClearCustomUploads = useCallback(() => {
+    setCustomItems([]);
+    setSelectedCustomIdx(0);
+    setResult(null);
+    setError(null);
+  }, []);
 
   // Execute Analysis
   const handleExecute = useCallback(async () => {
-    const scen = scenarios[selectedScenarioIdx];
-    const item = scen?.sample_items?.[selectedItemIdx];
-    const files = item?.files || (item?.file ? [item.file] : scen?.sample_files || scen?.files || []);
+    let files: string[] = [];
+
+    if (sourceMode === 'custom') {
+      if (customItems.length === 0) {
+        setError('Please upload at least one satellite raster before running analysis.');
+        return;
+      }
+      files = customItems.map((item) => item.file || item.filename).filter(Boolean) as string[];
+    } else {
+      const scen = scenarios[selectedScenarioIdx];
+      const item = scen?.sample_items?.[selectedItemIdx];
+      files = item?.files || (item?.file ? [item.file] : scen?.sample_files || scen?.files || []);
+    }
 
     if (files.length === 0) {
-      setError('No observation file available to analyze for this scene.');
+      setError('No observation file available to analyze.');
       return;
     }
 
@@ -76,28 +132,20 @@ export const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [domain, scenarios, selectedScenarioIdx, selectedItemIdx, query]);
+  }, [domain, sourceMode, customItems, scenarios, selectedScenarioIdx, selectedItemIdx, query]);
 
   return (
     <PageBackground>
       {/* 1. Floating Top Navigation Bar */}
       <Nav
         activeDomain={domain}
-        onSelectDomain={(newDomain) => {
-          setDomain(newDomain);
-          setResult(null);
-          setError(null);
-        }}
+        onSelectDomain={handleSelectDomain}
       />
 
       {/* 2. Full-Viewport 3D Multi-Map Planetary Hero */}
       <PlanetaryHero
         activeDomain={domain}
-        onSelectDomain={(newDomain) => {
-          setDomain(newDomain);
-          setResult(null);
-          setError(null);
-        }}
+        onSelectDomain={handleSelectDomain}
       />
 
       {/* 3. Balanced 55/45 Observation Deck Workstation */}
@@ -124,6 +172,17 @@ export const App: React.FC = () => {
           isLoading={isLoading}
           result={result}
           error={error}
+          sourceMode={sourceMode}
+          onChangeSourceMode={(mode) => {
+            setSourceMode(mode);
+            setResult(null);
+            setError(null);
+          }}
+          customItems={customItems}
+          onUploadSuccess={handleUploadSuccess}
+          onClearCustomUploads={handleClearCustomUploads}
+          selectedCustomIdx={selectedCustomIdx}
+          onSelectCustomItem={setSelectedCustomIdx}
         />
       </main>
 

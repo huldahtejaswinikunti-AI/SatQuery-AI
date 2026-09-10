@@ -52,3 +52,23 @@ export async function exportPdfReport(
   }
   return res.blob();
 }
+
+export async function uploadCustomRasters(
+  files: File[],
+  domain: ObservationDomain
+): Promise<{ status: string; count: number; items: any[] }> {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  const res = await fetch(`${API_BASE}/upload?domain=${domain}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to upload raster images');
+  }
+  return res.json();
+}
+
