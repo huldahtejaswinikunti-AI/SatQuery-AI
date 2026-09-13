@@ -14,9 +14,17 @@
 
 ---
 
-![SatQuery AI Cinematic 3D Mission Workstation](frontend/src/assets/hero.png)
+![SatQuery AI — Cinematic 3D Planetary Workstation](docs/images/ui_3d_globe_hero.png)
 
 The frontend is the "Cinematic 3D Mission Workstation" (as designated in [`docs/deployment.md`](docs/deployment.md)), a React 19 + Three.js interface with an interactive 3D Earth/Moon globe. The rendering pipeline leverages multi-layered WebGL planetary textures—specifically `earth_daymap.jpg`, `earth_clouds.jpg`, `earth_specular.jpg`, and `earth_normal.jpg` for Earth, alongside `moon.jpg` and `moon_bump.jpg` for Chandrayaan-2 lunar observation (as evidenced in `frontend/src/assets/textures/` and `frontend/public/textures/`). This mission operations console couples real-time planetary navigation with multimodal raster inspection viewers, dual-channel split telemetry HUDs, and natural-language query dispatch.
+
+| 🌍 Multimodal Earth Observation Deck | 🌑 Chandrayaan-2 Lunar Exploration Deck |
+|:---:|:---:|
+| ![Multimodal Earth Observation Deck](docs/images/ui_earth_deck.png) | ![Lunar Surface Exploration Deck](docs/images/ui_lunar_deck.png) |
+
+| 📊 Scientific Analysis Report & Telemetry HUD | 🌐 Interactive 3D Earth & Moon Engine |
+|:---:|:---:|
+| ![Scientific Analysis Report](docs/images/ui_analysis_report.png) | ![Interactive 3D Earth and Moon](docs/images/ui_3d_globe_hero.png) |
 
 ---
 
