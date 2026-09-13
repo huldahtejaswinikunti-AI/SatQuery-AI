@@ -68,6 +68,26 @@ Whether analyzing Sentinel optical imagery, all-weather radar penetration from S
 
 ---
 
+## 🌑 Lunar Capabilities
+
+SatQuery AI includes dedicated support for high-resolution planetary remote sensing datasets from ISRO's **Chandrayaan-2** (Orbiter High Resolution Camera [OHRC] and Terrain Mapping Camera-2 [TMC-2]) alongside NASA's **Lunar Reconnaissance Orbiter** (LROC WAC/NAC).
+
+Because terrestrial spectral reflectance indices ($NDVI, NDWI$) and SAR radar rules do not apply to the lunar regolith, lunar queries bypass Earth verification engines and route directly to the **Lunar Morphological Analyzer** (`satquery.lunar.lunar_pipeline`), returning explicit `experimental_unverified` telemetry tags.
+
+### Implementation Status:
+- **Permanently Shadowed Region (PSR) Cold-Trap Identification:** **[Shipped]**  
+  Deterministic pixel-level shadow fraction analysis (`gray < 20` on a 0–255 scale) coupled with polar latitude checks ($\ge 70^\circ$) identifies deep crater cold-trap candidates that may harbor volatile water ice deposits.
+- **Crater Ejecta Mapping:** **[Shipped]**  
+  High-albedo statistical thresholding ($\text{intensity} > \mu + 1.8\sigma$) isolates asymmetric ejecta rays, continuous ejecta blankets, and impact melt features around crater rims.
+- **Boulder Distribution & Density Estimation:** **[Shipped (Geometric Proxy)]**  
+  High-contrast sub-meter anomaly detection isolates boulder candidates and computes spatial density ($\text{boulders}/\text{km}^2$) when Ground Sampling Distance (GSD) telemetry metadata is supplied.
+- **Topographic Slope Envelope Analysis:** **[Shipped (Photometric Proxy)]**  
+  Photometric spatial gradient analysis computes surface roughness and bounds local slope angles ($\le 12^\circ$ threshold) to map nominal safe landing envelopes.
+- **Fine-Tuned Lunar VLM & Digital Elevation Model (DEM) Fusion:** **[Planned / In Progress]**  
+  TMC-2 stereo-derived 3D Digital Elevation Models and domain-specific fine-tuning on lunar surface morphology to replace general-purpose zero-shot VQA fallbacks.
+
+---
+
 ## 🏗️ Technical Approach & End-to-End Flowchart
 
 The SatQuery AI pipeline executes a deterministic, fail-safe data flow from user query ingestion to final intelligence report generation:
@@ -123,7 +143,9 @@ flowchart TD
 
 ## 🏛️ System Architecture
 
-SatQuery AI is built as a clean, modular microservice architecture decoupling the deep-learning backend from the operations console:
+SatQuery AI is built as a modular microservice architecture decoupling the deep-learning backend from the operations console.
+
+*(Note on UI Architecture: The user interface is implemented in React 19 + TypeScript + Vite with Three.js, communicating with the FastAPI backend over REST. Streamlit was evaluated in preliminary concepting but is not part of this codebase.)*
 
 | Component | Technology | Role & Function |
 |---|---|---|
@@ -245,6 +267,47 @@ python -m pytest tests/ -q
 
 ---
 
+## 🧪 Evaluation & Testing
+
+SatQuery AI incorporates an automated testing harness and reproducible evaluation pipeline designed for verifiable tracking.
+
+### Automated Test Suite (120+ Tests)
+The test suite (`tests/`) is executed via `pytest`:
+- **Deterministic Routing:** Validates keyword, intent, and modality routing across single-image VQA, visual grounding, bi-temporal change detection, optical-SAR fusion, and lunar pipelines.
+- **Spectral & Radar Mathematics:** Verifies numerical correctness and edge-case handling (division by zero, clipping) for $NDVI$, $NDWI$, $NDBI$, and SAR decibel cross-ratio calculations.
+- **Cross-Verification Engine:** Tests automated conflict detection between model predictions and spectral indices, ensuring confidence scores are docked when disagreement occurs.
+- **Lunar Pipeline & Batch Operations:** Validates Chandrayaan-2/LROC morphological extraction, GSD-dependent metrics, and multi-file batch job processing.
+
+### Reproducible Evaluation Harness
+All quantitative benchmark evaluations (`evaluation/`) output structured machine-readable JSON files (`evaluation/results/`). Every result file carries an immutable provenance block:
+- **Provenance Block Format:** Every result file records the executing `script`, UTC `timestamp`, `git_commit` hash, and `total_samples` evaluated, ensuring zero hand-entered figures.
+
+### Current Benchmark Results
+The table below documents baseline performance on held-out evaluation splits:
+
+| Benchmark Task | Evaluation Metric | Current Value | Evaluation State |
+|---|---|---|---|
+| **Land-Cover Classification** (BEN-19 / RSVQA) | Classification Accuracy | **16.0%** | Untrained baseline; checkpoint training in progress |
+| **Mission Captioning & VQA** (RSVQA held-out, $n=50$) | Caption BLEU-1 | **0.131** | Pre-training baseline (GeoChat-7B zero-shot) |
+| **Change-VQA** (CDVQA held-out, $n=35$) | Exact Match / Token F1 | 0.00 / 0.17 | Baseline (scene-level summary proxy) |
+
+> **Baseline Context:** Pre-checkpoint-training baseline; the deterministic verification layer is what the system leans on until that training is done.
+
+---
+
+## ⚠️ Known Limitations & Open Risks
+
+To maintain operational integrity and scientific transparency, the following known constraints and active development areas are documented plainly:
+
+1. **Land-Cover Classifier Checkpoint Still Training:**  
+   The ResNet-18 / BEN-19 land-cover classification head is actively training. In the absence of a finalized checkpoint, the inference pipeline falls back to an explicitly flagged `"untrained_fallback"` uncalibrated state, and predictions are never displayed as verified in mission outputs.
+2. **Change-VQA Question-Conditioning Under Active Repair:**  
+   The bi-temporal change VQA engine currently produces a scene-level change detection summary derived from TinyCD masks, rather than conditioning answers directly on specific natural-language sub-questions. Question-specific token routing is under active repair.
+3. **LoRA Adapter Delta Over Base Model:**  
+   Initial evaluation runs on the GeoChat-7B LoRA adapter indicate no measurable quantitative delta over the zero-shot base model on our current held-out evaluation sample (both scoring 16.0% accuracy / 0.131 BLEU-1). Re-tuning hyperparameters and expanding the training mixture across RSVQAxBEN are planned for the next pass.
+
+---
+
 ## 🖥️ Interactive Mission Workstation Operations
 
 ### A. Natural Language Querying (Custom User Input)
@@ -286,6 +349,11 @@ The **Mission Query Console** is positioned prominently above the dual-panel vis
 4. Set Environment Variables:
    - `PYTHON_VERSION` = `3.11.9`
    - `SATQUERY_USE_MOCK_FALLBACKS` = `true` (for free-tier CPU hosting)
+
+### Post-Hackathon Hosting & Maintenance
+- **Ownership & Maintenance:** Hosting, API maintenance, and model checkpoint updates are maintained directly by the core project development team.
+- **Post-Submission Availability:** The web demonstration (Render backend + Vercel frontend) will remain live post-submission for evaluation and review by hackathon judges.
+- **Local Air-Gapped Execution:** For evaluation in offline or air-gapped environments, the system can be executed entirely locally using the steps outlined in the [Installation & Launch Guide](#-installation--launch-guide).
 
 ---
 
