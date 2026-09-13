@@ -1,378 +1,176 @@
-# SatQuery AI — Multimodal Vision-Language Mission Intelligence
-### Smart India Hackathon (SIH 2026) · Problem Statement SIH26167
-**Sponsoring Organization:** Indian Space Research Organisation (ISRO) / Space Applications Centre (SAC), Department of Space, Government of India  
-**Domain:** Space Technology / AI / Remote Sensing & Planetary Science  
-**Status:** Production-Ready Mission Workstation & Validated ML Pipeline
+# SatQuery AI
+
+**An agentic vision-language assistant for remote-sensing image analysis.**
+Built for SIH 2026 — Problem Statement **26167** (Indian Space Research Organisation / Dept. of Space).
+
+Upload one or two satellite images (single optical/SAR, an optical–SAR pair, or a bi-temporal pair), ask a question in plain English, and get an evidence-grounded answer: a visual overlay, a confidence score, and an auditable trace of exactly which tools were used to produce it.
+
+> Full rationale, architecture decisions, and the 7-day build plan live in [`PRD.md`](./PRD.md). This file is the "how to run it" doc.
 
 ---
 
-[![Tests](https://img.shields.io/badge/Tests-145%2F145%20Passing-brightgreen?style=for-the-badge&logo=pytest)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/tests)
-[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue?style=for-the-badge&logo=python)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/requirements.txt)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688?style=for-the-badge&logo=fastapi)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/app/api_server.py)
-[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite%20%2B%20Three.js-61DAFB?style=for-the-badge&logo=react)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/frontend)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/LICENSE)
+## What it does (MVP scope)
 
----
+| Capability | Status |
+|---|---|
+| Single-image visual question answering | ✅ Mandatory, shipped |
+| Image captioning / scene description | ✅ Shipped |
+| Text-guided region grounding ("highlight the water body") | ✅ Shipped |
+| Bi-temporal change description & change-VQA | ✅ Mandatory, shipped |
+| Optical–SAR cross-modal fusion | ✅ Mandatory, shipped |
+| Agentic task routing + execution trace | ✅ Mandatory, shipped |
+| Confidence estimation via cross-modal/deterministic verification | ✅ Shipped — this is the differentiator, see below |
+| Lunar morphological analysis (Chandrayaan-2 OHRC/TMC-2, LROC WAC/NAC) | ✅ Shipped (`satquery.lunar.lunar_pipeline`) |
+| Permanently Shadowed Region (PSR) cold-trap identification | ✅ Shipped (shadow fraction + polar latitude proxy) |
+| Crater ejecta mapping & continuous blanket delineation | ✅ Shipped (high-albedo statistical thresholding) |
+| Boulder distribution & density estimation | ✅ Shipped (GSD-calibrated sub-meter anomaly detection) |
 
-## 🛰️ Executive Summary & Problem Statement
+**The wedge:** instead of one generic VLM guessing at everything, classical remote-sensing analysis (NDVI/NDWI/NDBI spectral indices, SAR backscatter thresholds) runs alongside the learned models and **cross-checks their claims**. When the VLM and the deterministic signal disagree, the system says so and lowers its confidence — instead of answering fluently and wrong.
 
-### The Problem (SIH26167)
-Modern satellite constellations (e.g., ISRO's Cartosat, RISAT, Chandrayaan, EOS-series, alongside Sentinel and Landsat) capture terabytes of multimodal Earth and planetary imagery every day. However, extracting actionable intelligence from this flood of data currently requires specialized remote sensing scientists manually operating complex GIS suites, computing band indices, and interpreting radar backscatter.
+### Lunar Morphological Analyzer (Chandrayaan-2 & LROC)
 
-Existing Vision-Language Models (VLMs) designed for everyday internet photos fail catastrophically in Earth and planetary observation because:
-1. **Hallucination of Spatial & Numerical Facts:** Generic VLMs generate fluent, plausible-sounding descriptions but invent surface areas, misidentify spectral features, and hallucinate vegetation or water bodies where none exist.
-2. **Ignorance of Remote Sensing Physics:** Standard models cannot interpret non-RGB bands, multi-spectral reflectance physics (NIR, SWIR), or synthetic aperture radar (SAR) polarization physics (VV/VH backscatter double-bounce vs. specular reflection).
-3. **Lack of Bi-Temporal Change Reasoning:** Generic architectures cannot perform pixel-precise bi-temporal change detection to distinguish seasonal variances from genuine urban or disaster-induced destruction.
-4. **Absence of Auditable Traceability:** Mission operators and space scientists cannot trust a black-box model without a step-by-step verification trace and confidence calibration.
+For planetary observation, SatQuery AI supports Chandrayaan-2 (OHRC and TMC-2) and LROC (WAC and NAC) datasets via `satquery.lunar.lunar_pipeline`. Because Earth-specific spectral indices ($NDVI, NDWI$) and SAR backscatter rules do not apply on the lunar surface, lunar queries bypass Earth verification engines and return an auditable `experimental_unverified` confidence tag while executing deterministic morphological algorithms:
+- **PSR Cold-Trap Candidate Identification:** Pixel-level deep shadow fraction extraction (`gray < 20` on a 0–255 scale) combined with polar latitude checks ($\ge 70^\circ$).
+- **Crater Ejecta Mapping:** Statistical high-albedo thresholding ($\text{intensity} > \mu + 1.8\sigma$) isolating rays, continuous ejecta blankets, and impact melt.
+- **Boulder Distribution Estimation:** Sub-meter high-contrast anomaly clustering yielding boulder counts and spatial density ($\text{boulders}/\text{km}^2$) when Ground Sampling Distance (GSD) telemetry metadata is supplied.
+- **Slope & Landing Envelopes:** Photometric spatial gradient proxy bounding local slope roughness ($\le 12^\circ$ nominal envelope).
+- **Planned / In Progress:** TMC-2 stereo-derived 3D Digital Elevation Models and domain-specific lunar VLM fine-tuning to replace general-purpose zero-shot VQA fallbacks.
 
-### The SatQuery AI Solution
-**SatQuery AI** is an interactive, agentic vision-language assistant built specifically for multimodal remote sensing and planetary science. It combines fine-tuned specialized deep learning models with **deterministic physical verification engines** to provide evidence-grounded, zero-hallucination analysis through natural language text queries.
-
-Whether analyzing Sentinel optical imagery, all-weather radar penetration from SAR, multi-decade bi-temporal urban expansion, or Chandrayaan-2 lunar crater morphology, SatQuery AI provides visual mask overlays, verified analytical facts, calibrated confidence metrics, and an auditable execution trace.
-
----
-
-## 🌟 Key Innovations & Differentiators
+## Architecture (short version)
 
 ```
-                       ┌──────────────────────────────────────────────┐
-                       │           SATQUERY AI CORE PARADIGM          │
-                       └──────────────────────────────────────────────┘
-                                              │
-         ┌────────────────────────────────────┼────────────────────────────────────┐
-         ▼                                    ▼                                    ▼
-┌──────────────────┐               ┌───────────────────────┐             ┌────────────────────┐
-│   PHYSICS-FIRST  │               │   DECOUPLED FACTUAL   │             │   DUAL-DOMAIN      │
-│ CROSS-CHECKING   │               │       SYNTHESIS       │             │   INTELLIGENCE     │
-├──────────────────┤               ├───────────────────────┤             ├────────────────────┤
-│ Learned models   │               │ The phrasing engine   │             │ Full capability    │
-│ are verified by  │               │ NEVER invents numbers │             │ for both Earth RS  │
-│ deterministic    │               │ or claims; it only    │             │ and Chandrayaan-2  │
-│ spectral indices │               │ verbalizes verified   │             │ Lunar surface      │
-│ & radar physics. │               │ structured facts.     │             │ morphology.        │
-└──────────────────┘               └───────────────────────┘             └────────────────────┘
+Image(s) + query
+      │
+      ▼
+Input Validator  →  Deterministic Task Router
+      │                        │
+      ▼                        ▼
+Perception layer      Specialist models
+(spectral indices,    (GeoChat-7B + LoRA,
+ SAR backscatter,       CLIPSeg, TinyCD)
+ land-cover classifier)
+      │                        │
+      └──────────┬─────────────┘
+                  ▼
+        Cross-verification layer
+                  ▼
+         Phrasing LLM (facts → text)
+                  ▼
+   Answer + overlay + confidence + trace
+                  ▼
+     React 19 + Three.js UI (FastAPI backend)
 ```
 
-1. **Deterministic Physical Cross-Verification (Hallucination Guardrail):**
-   Instead of trusting a neural network's unconstrained output, SatQuery AI runs classical remote sensing algorithms (NDVI, NDWI, NDBI, SAR backscatter ratio rules) in parallel with the VLM. When a deep-learning model claims "dense water body," the system checks the Normalized Difference Water Index ($NDWI > 0.3$). If they disagree, the system **transparently flags the conflict and docks its confidence score** instead of confidently misleading the analyst.
-2. **Decoupled Perception and Phrasing:**
-   Our phrasing engine (Phi-3 / Llama-3.2 / deterministic reporter) never inspects raw pixels directly to count objects or guess percentages. It strictly receives validated JSON facts computed by our specialist models and deterministic pipelines, completely eliminating numerical hallucinations.
-3. **Dual-Domain Intelligence (Earth & Planetary Lunar):**
-   SatQuery AI supports both terrestrial satellite workflows (optical, SAR, optical-SAR fusion, bi-temporal change detection) and **Chandrayaan-2 / LROC lunar surface intelligence** (PSR cold-trap identification, asymmetric crater ejecta tracking, boulder distribution, and terraced crater wall morphology).
-4. **Interactive Mission Query Console & Custom Raster Ingestion:**
-   Analysts can input arbitrary free-form natural language queries or trigger contextual command presets directly above the dual-panel observation workspace (`Ctrl+Enter` shortcut, inline prompt clearing). Beyond benchmark scenes, the workstation features an enterprise drag-and-drop raster ingestion engine supporting single and paired **GeoTIFF (`.tif`, `.geotiff`), PNG, and JPEG** rasters with automated CRS coordinate decoding, spatial resolution detection, and live image normalization.
-5. **Auditable Execution Trace & One-Click Report Generation:**
-   Every inference run yields a complete, machine-readable JSON execution trace disclosing the selected pipeline, active specialists, parameters, and verification status. Analysts can export executive-grade Markdown and PDF mission briefing reports with a single click.
-6. **Cinematic 3D Mission Workstation:**
-   Built with React 19, TypeScript, Tailwind CSS, and Three.js, the standalone frontend offers a space-mission operations environment featuring multi-layered 3D WebGL visualizations of Earth and the Moon, dual-channel RGB/SAR split viewers, and real-time telemetry HUDs.
+Full diagram and per-component reasoning: [`PRD.md §5–6`](./PRD.md).
 
----
+## Tech stack
 
-## 🌑 Lunar Capabilities
+| Layer | Choice |
+|---|---|
+| UI | React 19 + Vite + Tailwind + Three.js (FastAPI backend in `app/api_server.py`; Streamlit MVP replaced) |
+| VQA / captioning | `MBZUAI/geochat-7B` (LLaVA-1.5-based RS VLM) + LoRA adapter |
+| Grounding | CLIPSeg (`CIDAS/clipseg-rd64`) |
+| Change detection | TinyCD (`AndreaCodegoni/Tiny_model_4_CD`) |
+| Land-cover classifier | ResNet18 fine-tuned on BigEarthNet |
+| Phrasing | Phi-3-mini / Llama-3.2-3B-Instruct (local) |
+| Geo I/O | `rasterio`, `tifffile` |
+| Training | `torch`, `peft`, `bitsandbytes` |
+| Compute | Google Colab (free T4) + Kaggle (free P100) |
 
-SatQuery AI includes dedicated support for high-resolution planetary remote sensing datasets from ISRO's **Chandrayaan-2** (Orbiter High Resolution Camera [OHRC] and Terrain Mapping Camera-2 [TMC-2]) alongside NASA's **Lunar Reconnaissance Orbiter** (LROC WAC/NAC).
+Everything above is free-tier. See [`PRD.md §8`](./PRD.md) for the full cost breakdown.
 
-Because terrestrial spectral reflectance indices ($NDVI, NDWI$) and SAR radar rules do not apply to the lunar regolith, lunar queries bypass Earth verification engines and route directly to the **Lunar Morphological Analyzer** (`satquery.lunar.lunar_pipeline`), returning explicit `experimental_unverified` telemetry tags.
+## Datasets & pretrained models (credits)
 
-### Implementation Status:
-- **Permanently Shadowed Region (PSR) Cold-Trap Identification:** **[Shipped]**  
-  Deterministic pixel-level shadow fraction analysis (`gray < 20` on a 0–255 scale) coupled with polar latitude checks ($\ge 70^\circ$) identifies deep crater cold-trap candidates that may harbor volatile water ice deposits.
-- **Crater Ejecta Mapping:** **[Shipped]**  
-  High-albedo statistical thresholding ($\text{intensity} > \mu + 1.8\sigma$) isolates asymmetric ejecta rays, continuous ejecta blankets, and impact melt features around crater rims.
-- **Boulder Distribution & Density Estimation:** **[Shipped (Geometric Proxy)]**  
-  High-contrast sub-meter anomaly detection isolates boulder candidates and computes spatial density ($\text{boulders}/\text{km}^2$) when Ground Sampling Distance (GSD) telemetry metadata is supplied.
-- **Topographic Slope Envelope Analysis:** **[Shipped (Photometric Proxy)]**  
-  Photometric spatial gradient analysis computes surface roughness and bounds local slope angles ($\le 12^\circ$ threshold) to map nominal safe landing envelopes.
-- **Fine-Tuned Lunar VLM & Digital Elevation Model (DEM) Fusion:** **[Planned / In Progress]**  
-  TMC-2 stereo-derived 3D Digital Elevation Models and domain-specific fine-tuning on lunar surface morphology to replace general-purpose zero-shot VQA fallbacks.
+Sentinel-1/2, BigEarthNet, and LEVIR-CD are documented stand-ins for the real Cartosat-2S/RISAT data named in the PS.
 
----
+- **BigEarthNet-MM / v2.0** — Sentinel-1 + Sentinel-2 paired patches, CORINE land-cover labels. [bigearth.net](https://bigearth.net/) · [HF: GFM-Bench/BigEarthNet](https://huggingface.co/datasets/GFM-Bench/BigEarthNet)
+- **VRSBench** — captioning, grounding, and VQA benchmark for RS images. [github.com/lx709/VRSBench](https://github.com/lx709/VRSBench)
+- **RSVQA / RSVQAxBEN** (Lobry et al.) — VQA over Sentinel-2 and BigEarthNet imagery.
+- **CDVQA** (Yuan et al., built on the SECOND dataset) — bi-temporal change VQA.
+- **LEVIR-CD** — building change detection benchmark, used to pretrain TinyCD.
+- **GeoChat** (Kuckreja et al., CVPR 2024) — [MBZUAI/geochat-7B](https://huggingface.co/MBZUAI/geochat-7B), Apache-2.0.
+- **CLIPSeg** (Lüddecke & Ecker) — open-vocabulary segmentation, via 🤗 Transformers.
+- **TinyCD** (Codegoni et al.) — [github.com/AndreaCodegoni/Tiny_model_4_CD](https://github.com/AndreaCodegoni/Tiny_model_4_CD).
 
-## 🏗️ Technical Approach & End-to-End Flowchart
+We use these as-is or lightly fine-tune (LoRA) on top of them — see `PRD.md §6.2` for exactly what was adapted and why.
 
-The SatQuery AI pipeline executes a deterministic, fail-safe data flow from user query ingestion to final intelligence report generation:
+## Getting started
 
-```mermaid
-flowchart TD
-    subgraph INGESTION["1. Ingestion & Mission Configuration"]
-        UQ["User Natural Language Query (Custom Text or Presets)"] --> IV["Input Validator & Normalizer"]
-        IMG["Image Inputs: Benchmarks or Custom GeoTIFF / PNG / JPEG"] --> UP["API Raster Decoder & CRS Extractor"]
-        UP --> IV
-        IV -->|"Format, Band & Co-Registration Checks"| AR["Deterministic Agentic Task Router"]
-        IV -->|"Invalid Inputs / Dimension Mismatch"| ERR["Actionable Diagnostics & Error State"]
-    end
+> The full repo skeleton (folder-by-folder) ships in the next artifact. Once it's in place:
 
-    subgraph ROUTING["2. Agentic Task Decomposition"]
-        AR -->|"Keyword & Modality Analysis"| TR1["Single-Image VQA & Captioning"]
-        AR -->|"Keyword & Modality Analysis"| TR2["Text-Guided Region Grounding"]
-        AR -->|"Keyword & Modality Analysis"| TR3["Bi-Temporal Change Detection"]
-        AR -->|"Keyword & Modality Analysis"| TR4["Optical-SAR Cross-Modal Fusion"]
-        AR -->|"Keyword & Modality Analysis"| TR5["Lunar Morphological Specialist"]
-    end
-
-    subgraph SPECIALISTS["3. Multi-Model Specialist Layer"]
-        TR1 --> GC["GeoChat-7B + LoRA Adapter"]
-        TR2 --> CS["CLIPSeg Open-Vocabulary Segmenter"]
-        TR3 --> TCD["TinyCD Siamese Change Detector"]
-        TR3 --> LC["ResNet-18 Land Cover Classifier BEN-19"]
-        TR4 --> SAR_OPT["Multi-Modal Band Alignment Engine"]
-        TR5 --> LMR["Chandrayaan-2 Lunar Morphology Analyzer"]
-    end
-
-    subgraph PHYSICAL_LAYER["4. Deterministic Physics & Spectral Perception Layer"]
-        IMG --> SPEC["Spectral Indices: NDVI / NDWI / NDBI via NumPy"]
-        IMG --> SAR_PHYS["SAR VV/VH Backscatter Thresholding"]
-        IMG --> LUNAR_RAD["Optical Albedo & Shadow Fraction Geometry"]
-    end
-
-    subgraph VERIFICATION["5. Cross-Verification & Hallucination Guardrail Engine"]
-        GC & CS & TCD & LC & SAR_OPT & LMR --> VF["Cross-Verification Rule Engine"]
-        SPEC & SAR_PHYS & LUNAR_RAD --> VF
-        VF -->|"Models & Physical Signals Agree"| V_OK["High Confidence Verified"]
-        VF -->|"Spectral Conflict Detected"| V_WARN["Conflict Flagged & Confidence Docked"]
-    end
-
-    subgraph SYNTHESIS["6. Factual Verbalization & Delivery"]
-        V_OK & V_WARN --> PHR["Deterministic Phrasing & Report Engine"]
-        PHR --> REP["PDF Executive Briefing & Auditable JSON Trace"]
-        PHR --> HUD["Cinematic 3D Mission Workstation (React 19 + Three.js)"]
-    end
-```
-
----
-
-## 🏛️ System Architecture
-
-SatQuery AI is built as a modular microservice architecture decoupling the deep-learning backend from the operations console.
-
-*(Note on UI Architecture: The user interface is implemented in React 19 + TypeScript + Vite with Three.js, communicating with the FastAPI backend over REST. Streamlit was evaluated in preliminary concepting but is not part of this codebase.)*
-
-| Component | Technology | Role & Function |
-|---|---|---|
-| **Mission Workstation** | React 19, TypeScript, Vite, Tailwind CSS, Lucide | Standalone mission control console with telemetry HUD, dual-raster viewers, and interactive prompt accelerators. |
-| **Planetary 3D Engine** | Three.js, WebGL | Photorealistic interactive 3D globes for Earth (clouds, daymap, specular, normal) and the Moon (bump map, texture). |
-| **Mission Backend** | FastAPI, Uvicorn, Pydantic | High-throughput asynchronous REST API (`/api/scenarios`, `/api/analyze`, `/api/upload`, `/api/export-pdf`, `/api/batch`). |
-| **Pipeline Bridge** | Python (`app.pipeline_bridge`) | Decoupled adapter orchestrating validation, agentic routing, execution, verification, and output normalization. |
-| **Perception Engines** | NumPy, SciPy, Rasterio, Tifffile | Fast physical spectral indices ($NDVI, NDWI, NDBI$), SAR decibel backscatter calculus, and lunar shadow fractions. |
-| **Specialist Models** | PyTorch, Hugging Face Transformers | GeoChat-7B (quantized VQA), CLIPSeg (grounding), TinyCD (change detection), and ResNet-18 (BEN-19 classification). |
-| **Reporting Engine** | FPDF2, Markdown | Automated executive intelligence PDF synthesis and full JSON execution audit traces. |
-
----
-
-## ⚙️ Feasibility, Viability & Operational Engineering
-
-| Dimension | Engineering Implementation | Operational Advantage |
-|---|---|---|
-| **Zero Cloud Cost & Air-Gapped Readiness** | Designed to run completely offline on a single workstation laptop without external internet or third-party paid API keys. | Completely compliant with ISRO, Indian Armed Forces, and Department of Space air-gapped security protocols. |
-| **Efficient Model Footprint** | GeoChat-7B runs under 4-bit quantization requiring $<6\text{GB}$ VRAM; TinyCD, CLIPSeg, and ResNet-18 run in $<2\text{GB}$ RAM or on commodity CPUs. | Feasible on field laptops, mobile workstations, and ground stations without requiring multi-GPU server clusters. |
-| **Modular Microservices Architecture** | Standalone Cinematic 3D Frontend (React 19/Vite/Three.js) communicates over clean REST contracts to the high-performance FastAPI server (`app/api_server.py`). | Pluggable architecture allows seamless drop-in of future ISRO proprietary models (e.g. RISAT-1A or Cartosat-3 foundation models). |
-| **Sub-Second Deterministic Fallback** | If GPU acceleration is unavailable, classical deterministic spectral and SAR engines execute in $<50\text{ms}$ on standard x86/ARM CPUs. | High mission availability: the system never crashes or goes completely dark during a field emergency. |
-
----
-
-## 🌍 Impact & Benefits to ISRO and Society
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│                             STRATEGIC IMPACT DOMAINS                             │
-├───────────────────────────────┬──────────────────────────────────────────────────┤
-│ 🌊 Disaster Response & Relief │ Rapid optical-SAR flood and cyclone damage       │
-│                               │ mapping penetrating thick monsoon cloud covers.  │
-├───────────────────────────────┼──────────────────────────────────────────────────┤
-│ 🌾 Agriculture & Water Security│ Accurate seasonal water index tracking, drought   │
-│                               │ monitoring, and crop canopy health surveillance. │
-├───────────────────────────────┼──────────────────────────────────────────────────┤
-│ 🛡️ Border & Infrastructure    │ All-weather SAR detection of new settlements,     │
-│   Surveillance                │ runways, and road construction in sensitive zones│
-└───────────────────────────────┴──────────────────────────────────────────────────┘
-```
-
-- **For ISRO Scientists & Mission Specialists:** Democratizes remote sensing analysis across space exploration teams by allowing plain-English queries against petabyte-scale repositories.
-- **For National Disaster Management (NDRF / SDMA):** Enables instantaneous flood extent delineation during severe cyclones and monsoons when optical satellites are completely blinded by cloud cover.
-- **For Space Exploration (Chandrayaan & Lunar Missions):** Provides rapid pre-landing analysis of slope hazards, PSR candidate ice traps, and boulder clusters for autonomous or guided planetary navigation.
-
----
-
-## 🚀 Installation & Launch Guide
-
-### Prerequisites
-- **Python 3.10+** (Python 3.11 or 3.12 recommended)
-- **Node.js 18+** and npm 9+
-- **Git**
-
-### Step 1: Clone Repository & Setup Virtual Environment
 ```bash
-# Clone the repository
-git clone https://github.com/huldahtejaswinikunti-AI/SatQuery-AI.git
-cd SatQuery-AI
-
-# Create Python virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# On Windows PowerShell:
-.venv\Scripts\activate
-# On Linux / macOS:
-source .venv/bin/activate
-
-# Install all backend requirements and editable package
+# 1. Clone and set up environment
+git clone <repo-url> satquery-ai && cd satquery-ai
+python -m venv .venv && source .venv/bin/activate   # or: conda env create -f environment.yml
 pip install -r requirements.txt
-pip install -e .
 
-# Configure environment variables
-cp .env.example .env
-```
+# 2. Configure
+cp .env.example .env   # fill in any local paths; no API keys required for the core pipeline
 
----
+# 3. Get sample data (small, curated demo set — not the full datasets)
+python data/scripts/download_demo_samples.py
 
-### Step 2: Running the Application
-
-You can run SatQuery AI in either of two modes:
-
-#### Option A: Unified Single-Port Launch (Recommended for Demos)
-Build the React frontend bundle once, and FastAPI will serve both the **API and the cinematic React 3D interface on port 8000**:
-```powershell
-# 1. Build the React frontend
-cd frontend
-npm install
-npm run build
-cd ..
-
-# 2. Launch the unified FastAPI server
-uvicorn app.api_server:app --host 127.0.0.1 --port 8000
-```
-*Open your browser at **`http://localhost:8000`** to access the full Mission Workstation directly!*  
-*Swagger API documentation will be live at `http://localhost:8000/docs`.*
-
-#### Option B: Dual-Server Live Development (Hot Reloading)
-Run the backend and frontend independently for live development:
-```powershell
-# Terminal 1: Launch FastAPI Backend
+# 4. Run the app
+# Backend (FastAPI):
 uvicorn app.api_server:app --host 127.0.0.1 --port 8000 --reload
 
-# Terminal 2: Launch Vite React Frontend
-cd frontend
-npm install
-npm run dev
-```
-*Access the development server in your browser at **`http://localhost:5173`**.*
-
----
-
-### Step 3: Running the Automated Test Suite
-Execute the comprehensive test suite (all 145 unit and integration tests):
-```powershell
-python -m pytest tests/ -q
+# Frontend (React 19 + Three.js, in separate terminal):
+cd frontend && npm install && npm run dev
 ```
 
----
+Training / fine-tuning notebooks (meant for Colab or Kaggle, not local CPU):
 
-## 🧪 Evaluation & Testing
+```bash
+# open in Colab:
+notebooks/colab_lora_finetune.ipynb
+```
 
-SatQuery AI incorporates an automated testing harness and reproducible evaluation pipeline designed for verifiable tracking.
+Evaluation on held-out benchmark slices:
 
-### Automated Test Suite (120+ Tests)
-The test suite (`tests/`) is executed via `pytest`:
-- **Deterministic Routing:** Validates keyword, intent, and modality routing across single-image VQA, visual grounding, bi-temporal change detection, optical-SAR fusion, and lunar pipelines.
-- **Spectral & Radar Mathematics:** Verifies numerical correctness and edge-case handling (division by zero, clipping) for $NDVI$, $NDWI$, $NDBI$, and SAR decibel cross-ratio calculations.
-- **Cross-Verification Engine:** Tests automated conflict detection between model predictions and spectral indices, ensuring confidence scores are docked when disagreement occurs.
-- **Lunar Pipeline & Batch Operations:** Validates Chandrayaan-2/LROC morphological extraction, GSD-dependent metrics, and multi-file batch job processing.
+```bash
+python evaluation/run_rsvqa_eval.py --split held_out
+python evaluation/run_cdvqa_eval.py --split held_out
+```
+
+## Evaluation & testing
+
+### Automated Test Suite
+- **Count & Coverage:** 145 passing tests (`pytest tests/`) covering deterministic task routing (`tests/test_router.py`), spectral and radar mathematics ($NDVI, NDWI, NDBI$, SAR backscatter thresholds), cross-verification conflict docking (`tests/test_cross_verification.py`), lunar morphological extraction and batch execution (`tests/test_lunar_and_batch.py`), and land-cover calibration fallbacks (`tests/test_land_cover_calibration.py`).
 
 ### Reproducible Evaluation Harness
-All quantitative benchmark evaluations (`evaluation/`) output structured machine-readable JSON files (`evaluation/results/`). Every result file carries an immutable provenance block:
-- **Provenance Block Format:** Every result file records the executing `script`, UTC `timestamp`, `git_commit` hash, and `total_samples` evaluated, ensuring zero hand-entered figures.
+- Every quantitative evaluation in `evaluation/` outputs a machine-readable JSON file in `evaluation/results/`.
+- **Provenance Block:** Every result file carries an immutable provenance block recording `script`, UTC `timestamp`, `git_commit` hash, and `total_samples` count (zero hand-entered figures).
 
-### Current Benchmark Results
-The table below documents baseline performance on held-out evaluation splits:
+### Current Benchmark Results (Pre-Training Baselines)
+- **Land-Cover Classification (BEN-19 / RSVQA):** **16.0%** accuracy (untrained baseline; checkpoint training in progress).
+- **Captioning & VQA (RSVQA held-out, $n=50$):** BLEU-1 = **0.131** (GeoChat-7B zero-shot baseline).
+- **Change-VQA (CDVQA held-out, $n=35$):** Exact Match = **0.00**, Token F1 = **0.17** (scene-level summary proxy).
+- *Baseline Context:* Pre-checkpoint-training baseline; the deterministic verification layer is what the system leans on until that training is done.
 
-| Benchmark Task | Evaluation Metric | Current Value | Evaluation State |
-|---|---|---|---|
-| **Land-Cover Classification** (BEN-19 / RSVQA) | Classification Accuracy | **16.0%** | Untrained baseline; checkpoint training in progress |
-| **Mission Captioning & VQA** (RSVQA held-out, $n=50$) | Caption BLEU-1 | **0.131** | Pre-training baseline (GeoChat-7B zero-shot) |
-| **Change-VQA** (CDVQA held-out, $n=35$) | Exact Match / Token F1 | 0.00 / 0.17 | Baseline (scene-level summary proxy) |
+### Known Limitations & Open Risks (from Repo State)
+- **Land-cover classifier checkpoint still training:** When checkpoint is missing or training, inference explicitly tags output as `"untrained_fallback"` (uncalibrated) and is never displayed as verified.
+- **Change-VQA question-conditioning under active repair:** `run_change_detection` currently outputs scene-level summaries from TinyCD rather than answering question-specific token conditions.
+- **LoRA adapter delta over base model:** Quantitative evaluation on held-out slice shows no measurable delta over base model (both at 16.0% accuracy / 0.131 BLEU-1); re-tuning and training mixture expansion planned next pass.
 
-> **Baseline Context:** Pre-checkpoint-training baseline; the deterministic verification layer is what the system leans on until that training is done.
+## Usage
 
----
+1. Upload one image (single-image tasks), two co-registered optical+SAR images (fusion), or two same-location images from different dates (change).
+2. Type a question, e.g.:
+   - *"Describe the land-cover and major objects visible in this image."*
+   - *"Highlight the water body referred to in the query."*
+   - *"What changed between these two dates, and where did the change occur?"*
+   - *"Use the optical and SAR images together to identify built-up and water-covered regions."*
+   - *"Has the built-up area increased, decreased, or remained unchanged?"*
+3. Read the answer, the overlay, and the confidence badge. Expand the **execution trace** panel to see exactly which tools ran and why. Download the report.
 
-## ⚠️ Known Limitations & Open Risks
+## Project structure
 
-To maintain operational integrity and scientific transparency, the following known constraints and active development areas are documented plainly:
+See the next artifact for the full annotated folder tree and the actual repo skeleton.
 
-1. **Land-Cover Classifier Checkpoint Still Training:**  
-   The ResNet-18 / BEN-19 land-cover classification head is actively training. In the absence of a finalized checkpoint, the inference pipeline falls back to an explicitly flagged `"untrained_fallback"` uncalibrated state, and predictions are never displayed as verified in mission outputs.
-2. **Change-VQA Question-Conditioning Under Active Repair:**  
-   The bi-temporal change VQA engine currently produces a scene-level change detection summary derived from TinyCD masks, rather than conditioning answers directly on specific natural-language sub-questions. Question-specific token routing is under active repair.
-3. **LoRA Adapter Delta Over Base Model:**  
-   Initial evaluation runs on the GeoChat-7B LoRA adapter indicate no measurable quantitative delta over the zero-shot base model on our current held-out evaluation sample (both scoring 16.0% accuracy / 0.131 BLEU-1). Re-tuning hyperparameters and expanding the training mixture across RSVQAxBEN are planned for the next pass.
+## Team & timeline
 
----
+Built for the SIH 2026 internal hackathon (Sept 10, 2026). Full day-by-day build plan: [`PRD.md §9`](./PRD.md).
 
-## 🖥️ Interactive Mission Workstation Operations
+## License
 
-### A. Natural Language Querying (Custom User Input)
-The **Mission Query Console** is positioned prominently above the dual-panel visual workstation:
-- **Free-Form Questions:** Enter arbitrary complex prompts (e.g., *"Locate industrial warehouse facilities and compute NDVI spectral vegetation density"* or *"Analyze crater rim morphology and detect polar shadow traps"*).
-- **Contextual Command Presets:** One-click chips for Earth RS (`+ Locate Buildings`, `+ Find Water Bodies`, `+ Describe Scene`, `+ Detect Changes`, `+ Spectral Vegetation`, `+ Identify Roads`) and Chandrayaan-2 Lunar RS (`+ Find Craters`, `+ Crater Morphology`, `+ Analyze Regolith`, `+ Shadow & PSRs`, `+ Ejecta Blankets`, `+ Compare Terrains`).
-- **Keyboard Accelerators:** Press `Ctrl+Enter` to dispatch queries directly to the autonomous pipeline.
-- **Inline Clear:** Click `✕ Clear` to reset prompts instantly.
-
-### B. Custom Satellite Raster Ingestion (GeoTIFF / PNG / JPEG)
-- Switch the observation source mode using the tab: `[ 📤 Upload Custom Rasters ]`.
-- **Drag & Drop / File Picker:** Ingest 1 raster (single scene analysis) or 2 rasters (cross-modal optical+SAR fusion or pre/post disaster bi-temporal change).
-- **Automated Spatial Telemetry:** Decodes raster metadata on ingestion, detecting width, height, band count, CRS coordinate reference systems, and radiometric profile.
-- **Multi-Raster Inspection:** When 2 rasters are uploaded, easily toggle between Image 1 and Image 2 in the high-resolution viewer while both are processed by the multimodal pipeline.
-
----
-
-## 🌐 Production Cloud Deployment
-
-### Frontend (Vercel)
-1. Import the repository into [Vercel](https://vercel.com).
-2. Set **Root Directory** to `frontend`.
-3. Framework Preset: `Vite`.
-4. Build Command: `npm run build`, Output Directory: `dist`.
-5. Add Environment Variable:
-   - `VITE_API_BASE_URL` = `https://your-backend-service.onrender.com`
-6. Deploy.
-
-### Backend (Render / Docker / Linux VPS)
-1. Use the included `render.yaml` or create a new Web Service on [Render](https://render.com).
-2. Build Command:
-   ```bash
-   pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
-   ```
-3. Start Command:
-   ```bash
-   uvicorn app.api_server:app --host 0.0.0.0 --port $PORT
-   ```
-4. Set Environment Variables:
-   - `PYTHON_VERSION` = `3.11.9`
-   - `SATQUERY_USE_MOCK_FALLBACKS` = `true` (for free-tier CPU hosting)
-
-### Post-Hackathon Hosting & Maintenance
-- **Ownership & Maintenance:** Hosting, API maintenance, and model checkpoint updates are maintained directly by the core project development team.
-- **Post-Submission Availability:** The web demonstration (Render backend + Vercel frontend) will remain live post-submission for evaluation and review by hackathon judges.
-- **Local Air-Gapped Execution:** For evaluation in offline or air-gapped environments, the system can be executed entirely locally using the steps outlined in the [Installation & Launch Guide](#-installation--launch-guide).
-
----
-
-## 📚 Academic References & Literature Citations
-
-1. **GeoChat:** Kuckreja, K., et al. (CVPR 2024). *GeoChat: Grounded Large Vision-Language Model for Remote Sensing.* Mohamed bin Zayed University of Artificial Intelligence (MBZUAI).
-2. **CLIPSeg:** Lüddecke, T., & Ecker, A. (CVPR 2022). *Image Segmentation Using Text and Image Prompts.* University of Göttingen.
-3. **TinyCD:** Codegoni, A., et al. (IEEE GRSL 2023). *TinyCD: A (Not So) Deep Learning Network for Change Detection in Remote Sensing.*
-4. **BigEarthNet-MM:** Sumbul, G., et al. (IEEE Geoscience and Remote Sensing Magazine 2021). *BigEarthNet-MM: A Large-Scale, Multimodal, Multilabel Benchmark Archive for Remote Sensing Image Classification and Retrieval.*
-5. **RSVQA:** Lobry, S., et al. (IEEE TGRS 2020). *RSVQA: Visual Question Answering for Remote Sensing Data.*
-6. **LEVIR-CD:** Chen, H., & Shi, Z. (IEEE TGRS 2020). *A Spatial-Temporal Attention-Based Method and a New Dataset for Remote Sensing Image Change Detection.*
-7. **Chandrayaan-2 Imaging:** Chowdhury, A. R., et al. (Current Science 2020). *Terrain Mapping Camera-2 (TMC-2) and Orbiter High Resolution Camera (OHRC) on Chandrayaan-2.* ISRO / Space Applications Centre (SAC).
-
----
-
-## 📄 License & Intellectual Property
-
-SatQuery AI is open-source under the **MIT License**.  
-Pretrained models (`GeoChat-7B`, `CLIPSeg`, `TinyCD`, `ResNet-18`) and datasets (`BigEarthNet`, `RSVQA`, `LEVIR-CD`) remain subject to their respective upstream licenses (Apache 2.0, MIT, Creative Commons).
-
----
-**SatQuery AI · SIH 2026 · Indian Space Research Organisation (ISRO) / Space Applications Centre (SAC)**
+MIT for original code in this repo. Pretrained models and datasets retain their own upstream licenses (see credits above — GeoChat is Apache-2.0; check each dataset's terms before redistribution).
