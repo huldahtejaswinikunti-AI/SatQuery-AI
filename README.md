@@ -1,8 +1,16 @@
 # SatQuery AI — Multimodal Vision-Language Mission Intelligence
 ### Smart India Hackathon (SIH 2026) · Problem Statement SIH26167
 **Sponsoring Organization:** Indian Space Research Organisation (ISRO) / Space Applications Centre (SAC), Department of Space, Government of India  
-**Domain:** Space Technology / AI / Remote Sensing  
+**Domain:** Space Technology / AI / Remote Sensing & Planetary Science  
 **Status:** Production-Ready Mission Workstation & Validated ML Pipeline
+
+---
+
+[![Tests](https://img.shields.io/badge/Tests-145%2F145%20Passing-brightgreen?style=for-the-badge&logo=pytest)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/tests)
+[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue?style=for-the-badge&logo=python)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/requirements.txt)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20%2B%20Uvicorn-009688?style=for-the-badge&logo=fastapi)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/app/api_server.py)
+[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite%20%2B%20Three.js-61DAFB?style=for-the-badge&logo=react)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/frontend)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](file:///c:/Users/sai%20siddhartha%20raj/SatQuery-AI/SatQuery-AI/LICENSE)
 
 ---
 
@@ -56,7 +64,7 @@ Whether analyzing Sentinel optical imagery, all-weather radar penetration from S
 5. **Auditable Execution Trace & One-Click Report Generation:**
    Every inference run yields a complete, machine-readable JSON execution trace disclosing the selected pipeline, active specialists, parameters, and verification status. Analysts can export executive-grade Markdown and PDF mission briefing reports with a single click.
 6. **Cinematic 3D Mission Workstation:**
-   Built with Three.js and React, the frontend offers a space-mission operations environment featuring multi-layered 3D WebGL visualizations of Earth and the Moon, dual-channel RGB/SAR split viewers, and real-time telemetry HUDs.
+   Built with React 19, TypeScript, Tailwind CSS, and Three.js, the standalone frontend offers a space-mission operations environment featuring multi-layered 3D WebGL visualizations of Earth and the Moon, dual-channel RGB/SAR split viewers, and real-time telemetry HUDs.
 
 ---
 
@@ -98,82 +106,34 @@ flowchart TD
     end
 
     subgraph VERIFICATION["5. Cross-Verification & Hallucination Guardrail Engine"]
-        GC --> XV["Cross-Verification Engine"]
-        CS --> XV
-        TCD --> XV
-        LC --> XV
-        SAR_OPT --> XV
-        LMR --> XV
-        SPEC --> XV
-        SAR_PHYS --> XV
-        LUNAR_RAD --> XV
-        XV -->|"Matrix Matching"| CONF["Calibrated Confidence Scorer"]
-        XV -->|"Audited Output"| VF["Verified Factual Assertions JSON"]
+        GC & CS & TCD & LC & SAR_OPT & LMR --> VF["Cross-Verification Rule Engine"]
+        SPEC & SAR_PHYS & LUNAR_RAD --> VF
+        VF -->|"Models & Physical Signals Agree"| V_OK["High Confidence Verified"]
+        VF -->|"Spectral Conflict Detected"| V_WARN["Conflict Flagged & Confidence Docked"]
     end
 
-    subgraph REPORTING["6. Synthesis & Mission Presentation"]
-        VF --> PE["Factual Phrasing & Report Engine"]
-        CONF --> PE
-        PE --> MD["Downloadable Intelligence Briefing Markdown / PDF"]
-        PE --> HUD["Cinematic React / Three.js Mission Workstation"]
-        PE --> TRACE["Full Auditable Execution Trace JSON"]
+    subgraph SYNTHESIS["6. Factual Verbalization & Delivery"]
+        V_OK & V_WARN --> PHR["Deterministic Phrasing & Report Engine"]
+        PHR --> REP["PDF Executive Briefing & Auditable JSON Trace"]
+        PHR --> HUD["Cinematic 3D Mission Workstation (React 19 + Three.js)"]
     end
 ```
 
-### Detailed Pipeline Stages:
-1. **Input Validation:** Inspects file geometry, bit depth, channel configuration, radiometric ranges, and spatial alignment across multi-temporal or optical-SAR pairs.
-2. **Deterministic Task Routing:** Directs execution to the optimal model pipeline based on semantic tokens and image modality without relying on an unstable LLM-in-the-loop router.
-3. **Specialist Inference:** Executes deep-learning backbones (GeoChat-7B, CLIPSeg, TinyCD, ResNet-18) in parallel with physical computations.
-4. **Deterministic Physical Verification:** Computes optical band ratios and radar scatter properties to cross-validate learned predictions against known physical laws of remote sensing.
-5. **Calibrated Confidence Scoring:** Weights alignment between the physical layer and the neural specialists to produce a scientifically honest confidence rating.
-6. **Report Synthesis:** Compiles segmented visual mask overlays, analytical tables, natural language summaries, and complete execution traces into the UI and downloadable artifacts.
-
 ---
 
-## 🤖 ML Models, Algorithms & Training Methodologies
+## 🏛️ System Architecture
 
-| Component | Base Model | Architecture | Adaptation / Training Strategy | Dataset Used | Inference Target |
-|---|---|---|---|---|---|
-| **Remote Sensing VLM** | `MBZUAI/geochat-7B` | LLaVA-1.5 multimodal transformer (Vicuna-7B + CLIP-ViT-L/14) | 4-bit QLoRA fine-tuning ($r=16, \alpha=32$, dropout $0.05$) on `q_proj, v_proj` | `RSVQAxBEN` (BigEarthNet-derived VQA) | GPU / 4-bit CUDA |
-| **Region Grounding** | `CIDAS/clipseg-rd64` | Transformer-based dense visual-language segmenter with U-Net decoder | Zero-shot open-vocabulary text-prompted segmentation cross-checked against NDWI/NDVI | ImageNet + PhraseCut (zero-shot RS adaptation) | CPU / GPU |
-| **Change Detection** | `TinyCD` | Lightweight Siamese convolutional network with temporal difference attention | Pretrained on high-resolution bi-temporal building change benchmarks | `LEVIR-CD` & `CDVQA` (SECOND benchmark) | CPU / GPU (<100ms) |
-| **Land Cover Classifier** | `ResNet-18` | Deep residual convolutional network with 19-class sigmoid multi-label head | Multi-label cross-entropy training from ImageNet initialization | `BigEarthNet-S2` (19 CORINE land-cover classes) | CPU / GPU |
-| **Deterministic Spectral Engine** | Custom Pure NumPy | Physics-based normalized difference ratio algorithms | Closed-form radiometric equations, deterministic mathematics | Sentinel-2 L2A & Landsat Surface Reflectance | CPU (<10ms) |
-| **SAR Physics Engine** | Custom Pure NumPy | Co-polarized (VV) & Cross-polarized (VH) dB thresholding | Radar backscatter physics (specular vs double-bounce scattering) | Sentinel-1 GRD & RISAT-1 data | CPU (<10ms) |
-| **Lunar Morphology Specialist** | Custom Deterministic Pipeline | Shadow-occlusion analysis, roughness variance, albedo extraction | Photometric and geometric planetary surface processing | Chandrayaan-2 TMC-2 / OHRC & LROC WAC/NAC | CPU (<20ms) |
+SatQuery AI is built as a clean, modular microservice architecture decoupling the deep-learning backend from the operations console:
 
-### Algorithmic Mathematical Formulations:
-
-$$\text{NDVI} = \frac{\rho_{\text{NIR}} - \rho_{\text{Red}}}{\rho_{\text{NIR}} + \rho_{\text{Red}}} \quad (\text{Healthy Vegetation Identification})$$
-
-$$\text{NDWI} = \frac{\rho_{\text{Green}} - \rho_{\text{NIR}}}{\rho_{\text{Green}} + \rho_{\text{NIR}}} \quad (\text{Surface Water Delineation})$$
-
-$$\text{NDBI} = \frac{\rho_{\text{SWIR}} - \rho_{\text{NIR}}}{\rho_{\text{SWIR}} + \rho_{\text{NIR}}} \quad (\text{Impervious Surface / Built-up Mapping})$$
-
-$$\sigma^0 (\text{dB}) = 10 \cdot \log_{10}(\text{DN}^2) - A_0 \quad (\text{SAR Calibrated Radar Backscatter})$$
-
-> **Physical SWIR Decoupling Guardrail:**  
-> NDBI and built-up index delineations strictly require physical Short-Wave Infrared ($\rho_{\text{SWIR}}$) reflectance. On 3-band (RGB) or 4-band (RGB+NIR) inputs where SWIR is physically absent, SatQuery AI explicitly suppresses computation and reports `Unavailable (requires SWIR band)` rather than aliasing green/NIR channels or generating duplicate water/built-up coverage percentages.
-
----
-
-## 📊 Datasets & Research Foundations
-
-SatQuery AI is trained, calibrated, and evaluated against established remote sensing benchmarks:
-
-1. **BigEarthNet-MM / BigEarthNet v2.0 (TU Berlin):**
-   - 590,326 co-registered Sentinel-1 SAR (dual-polarization VV/VH) and Sentinel-2 Multi-Spectral (12 bands) image tiles.
-   - Provides the foundational ground truth for our optical-SAR fusion engine and multi-label land cover classifier.
-2. **RSVQA / RSVQAxBEN (Lobry et al., IEEE TGRS):**
-   - Over 14 million visual question-answer pairs built directly on Sentinel-2 and BigEarthNet imagery covering presence, comparison, and area reasoning.
-   - Used for LoRA fine-tuning of GeoChat-7B to ensure remote sensing vocabulary alignment.
-3. **LEVIR-CD (Chen & Shi):**
-   - 637 ultra-high-resolution ($0.5\text{m/pixel}$) bi-temporal remote sensing image pairs ($1024 \times 1024$) covering significant urban development over 5–14 years.
-   - Used for calibrating and training our TinyCD Siamese change detection specialist.
-4. **CDVQA Benchmark (Yuan et al.):**
-   - Bi-temporal change visual question answering benchmark built upon the SECOND dataset containing 2,968 image pairs and 122,000+ QA pairs covering multi-class change reasoning.
-5. **Chandrayaan-2 TMC-2 / OHRC & LROC WAC/NAC Archives:**
-   - High-resolution lunar surface imagery ($0.25\text{m}$ to $25\text{m/pixel}$) used for validating lunar impact crater morphology, central peak elevation, and south pole Permanently Shadowed Region (PSR) analysis.
+| Component | Technology | Role & Function |
+|---|---|---|
+| **Mission Workstation** | React 19, TypeScript, Vite, Tailwind CSS, Lucide | Standalone mission control console with telemetry HUD, dual-raster viewers, and interactive prompt accelerators. |
+| **Planetary 3D Engine** | Three.js, WebGL | Photorealistic interactive 3D globes for Earth (clouds, daymap, specular, normal) and the Moon (bump map, texture). |
+| **Mission Backend** | FastAPI, Uvicorn, Pydantic | High-throughput asynchronous REST API (`/api/scenarios`, `/api/analyze`, `/api/upload`, `/api/export-pdf`, `/api/batch`). |
+| **Pipeline Bridge** | Python (`app.pipeline_bridge`) | Decoupled adapter orchestrating validation, agentic routing, execution, verification, and output normalization. |
+| **Perception Engines** | NumPy, SciPy, Rasterio, Tifffile | Fast physical spectral indices ($NDVI, NDWI, NDBI$), SAR decibel backscatter calculus, and lunar shadow fractions. |
+| **Specialist Models** | PyTorch, Hugging Face Transformers | GeoChat-7B (quantized VQA), CLIPSeg (grounding), TinyCD (change detection), and ResNet-18 (BEN-19 classification). |
+| **Reporting Engine** | FPDF2, Markdown | Automated executive intelligence PDF synthesis and full JSON execution audit traces. |
 
 ---
 
@@ -194,9 +154,6 @@ SatQuery AI is trained, calibrated, and evaluated against established remote sen
 ┌──────────────────────────────────────────────────────────────────────────────────┐
 │                             STRATEGIC IMPACT DOMAINS                             │
 ├───────────────────────────────┬──────────────────────────────────────────────────┤
-│ 🛰️ ISRO Mission Operations     │ Rapid natural-language querying of Earth & Lunar │
-│                               │ archives without writing ad-hoc geospatial code. │
-├───────────────────────────────┼──────────────────────────────────────────────────┤
 │ 🌊 Disaster Response & Relief │ Rapid optical-SAR flood and cyclone damage       │
 │                               │ mapping penetrating thick monsoon cloud covers.  │
 ├───────────────────────────────┼──────────────────────────────────────────────────┤
@@ -214,54 +171,76 @@ SatQuery AI is trained, calibrated, and evaluated against established remote sen
 
 ---
 
-## 🚀 Installation & Local Deployment Guide
+## 🚀 Installation & Launch Guide
 
 ### Prerequisites
-- Python 3.10+ (Python 3.11 or 3.12 recommended)
-- Node.js 18+ and npm 9+
-- Git
+- **Python 3.10+** (Python 3.11 or 3.12 recommended)
+- **Node.js 18+** and npm 9+
+- **Git**
 
-### 1. Clone & Setup Backend
-```powershell
+### Step 1: Clone Repository & Setup Virtual Environment
+```bash
 # Clone the repository
 git clone https://github.com/huldahtejaswinikunti-AI/SatQuery-AI.git
 cd SatQuery-AI
 
-# Create and activate Python virtual environment
+# Create Python virtual environment
 python -m venv .venv
-.venv\Scripts\activate   # Linux/macOS: source .venv/bin/activate
 
-# Install all backend requirements
+# Activate virtual environment
+# On Windows PowerShell:
+.venv\Scripts\activate
+# On Linux / macOS:
+source .venv/bin/activate
+
+# Install all backend requirements and editable package
 pip install -r requirements.txt
+pip install -e .
 
 # Configure environment variables
 cp .env.example .env
 ```
 
-### 2. Launch the FastAPI Mission Backend
-```powershell
-# From the repository root
-uvicorn app.api_server:app --host 127.0.0.1 --port 8000 --reload
-```
-*API documentation will be live at `http://127.0.0.1:8000/docs`.*
+---
 
-### 3. Launch the Cinematic React 3D Frontend
+### Step 2: Running the Application
+
+You can run SatQuery AI in either of two modes:
+
+#### Option A: Unified Single-Port Launch (Recommended for Demos)
+Build the React frontend bundle once, and FastAPI will serve both the **API and the cinematic React 3D interface on port 8000**:
 ```powershell
-# In a new terminal, navigate to the frontend directory
+# 1. Build the React frontend
 cd frontend
-
-# Install Node dependencies
 npm install
+npm run build
+cd ..
 
-# Start the Vite development server
+# 2. Launch the unified FastAPI server
+uvicorn app.api_server:app --host 127.0.0.1 --port 8000
+```
+*Open your browser at **`http://localhost:8000`** to access the full Mission Workstation directly!*  
+*Swagger API documentation will be live at `http://localhost:8000/docs`.*
+
+#### Option B: Dual-Server Live Development (Hot Reloading)
+Run the backend and frontend independently for live development:
+```powershell
+# Terminal 1: Launch FastAPI Backend
+uvicorn app.api_server:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 2: Launch Vite React Frontend
+cd frontend
+npm install
 npm run dev
 ```
-*Access the Mission Workstation in your browser at `http://localhost:5173`.*
+*Access the development server in your browser at **`http://localhost:5173`**.*
 
-### 4. Running the Test Suite
+---
+
+### Step 3: Running the Automated Test Suite
+Execute the comprehensive test suite (all 145 unit and integration tests):
 ```powershell
-# Execute the comprehensive test suite (all 145 unit and integration tests)
-python -m pytest -q
+python -m pytest tests/ -q
 ```
 
 ---
@@ -275,7 +254,7 @@ The **Mission Query Console** is positioned prominently above the dual-panel vis
 - **Keyboard Accelerators:** Press `Ctrl+Enter` to dispatch queries directly to the autonomous pipeline.
 - **Inline Clear:** Click `✕ Clear` to reset prompts instantly.
 
-### B. Custom Satellite Raster Upload (GeoTIFF / PNG / JPEG)
+### B. Custom Satellite Raster Ingestion (GeoTIFF / PNG / JPEG)
 - Switch the observation source mode using the tab: `[ 📤 Upload Custom Rasters ]`.
 - **Drag & Drop / File Picker:** Ingest 1 raster (single scene analysis) or 2 rasters (cross-modal optical+SAR fusion or pre/post disaster bi-temporal change).
 - **Automated Spatial Telemetry:** Decodes raster metadata on ingestion, detecting width, height, band count, CRS coordinate reference systems, and radiometric profile.
@@ -283,25 +262,30 @@ The **Mission Query Console** is positioned prominently above the dual-panel vis
 
 ---
 
-## 🌐 Deploying to Vercel via GitHub
+## 🌐 Production Cloud Deployment
 
-1. **Push your code to GitHub:**
-   ```powershell
-   git add .
-   git commit -m "feat: complete SatQuery AI mission system"
-   git push origin main
+### Frontend (Vercel)
+1. Import the repository into [Vercel](https://vercel.com).
+2. Set **Root Directory** to `frontend`.
+3. Framework Preset: `Vite`.
+4. Build Command: `npm run build`, Output Directory: `dist`.
+5. Add Environment Variable:
+   - `VITE_API_BASE_URL` = `https://your-backend-service.onrender.com`
+6. Deploy.
+
+### Backend (Render / Docker / Linux VPS)
+1. Use the included `render.yaml` or create a new Web Service on [Render](https://render.com).
+2. Build Command:
+   ```bash
+   pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
    ```
-2. **Import into Vercel:**
-   - Log in to [Vercel](https://vercel.com) with GitHub.
-   - Click **Add New...** → **Project** and select `SatQuery-AI`.
-   - In Project Configuration, set **Root Directory** to `frontend`.
-   - Framework Preset: `Vite`.
-   - Build Command: `npm run build`.
-   - Output Directory: `dist`.
-3. **Set Environment Variable in Vercel:**
-   - Key: `VITE_API_BASE_URL`
-   - Value: `https://your-backend-service.onrender.com` (URL of your deployed FastAPI server).
-4. Click **Deploy**.
+3. Start Command:
+   ```bash
+   uvicorn app.api_server:app --host 0.0.0.0 --port $PORT
+   ```
+4. Set Environment Variables:
+   - `PYTHON_VERSION` = `3.11.9`
+   - `SATQUERY_USE_MOCK_FALLBACKS` = `true` (for free-tier CPU hosting)
 
 ---
 
