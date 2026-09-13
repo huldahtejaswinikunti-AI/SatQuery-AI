@@ -100,7 +100,7 @@ flowchart TD
 
     X --> P[Phrasing LLM<br/>structured facts -> NL, JSON in / text out]
     P --> O[Answer + overlay + confidence + execution trace]
-    O --> UI[Streamlit app]
+    O --> UI[React 3D Mission Workstation / FastAPI]
 ```
 
 **Design rule (non‑negotiable):** the Phrasing LLM never sees raw pixels — only the structured JSON facts the perception/specialist layers computed. It converts facts to language; it does not invent facts. This is what keeps hallucination out of the numbers judges will probe (increase/decrease, % area changed, presence/absence).
@@ -150,7 +150,7 @@ Per the PS: *"only the observable execution trace... will be evaluated. Internal
 
 | Layer | Choice | Cost |
 |---|---|---|
-| Frontend | Streamlit | Free |
+| Frontend | React 19 + Vite + Tailwind + Three.js | Free |
 | Hosting (demo) | Local laptop GPU (primary) / HF Spaces free tier (backup) | Free |
 | Training/eval compute | Google Colab free T4 + Kaggle free P100 (parallelized) | Free |
 | Model hub | Hugging Face Hub (public repos) | Free |
@@ -172,7 +172,7 @@ Assumes a small team; treat each day's block as parallelizable workstreams — s
 | **Day 3 (Wed/Thu)** | GeoChat‑7B inference wired in (4‑bit); **checkpoint decision**: keep 7B or fall back to BLIP‑2 for live path | VQA/caption working end‑to‑end on ≥1 real query; latency measured |
 | **Day 4 (Thu)** | CLIPSeg grounding + cross‑check vs spectral masks; TinyCD change mask wired in | Grounding + change mask both producing overlays |
 | **Day 5 (Fri)** | LoRA fine‑tune run (GeoChat or classifier) on RSVQAxBEN slice; before/after eval numbers captured | Adaptation evidence slide ready |
-| **Day 6 (Sat)** | Agentic router + execution trace + optical‑SAR fusion rule engine; Streamlit UI assembled end‑to‑end | Full pipeline click‑through works for all 5 capabilities |
+| **Day 6 (Sat)** | Agentic router + execution trace + optical‑SAR fusion rule engine; React 3D UI assembled end‑to‑end | Full pipeline click‑through works for all 5 capabilities |
 | **Day 7 (Sun)** | Freeze features. Curate 15–20 demo examples. Record backup demo video. Write/rehearse the 3‑minute pitch. Bug bash only — **no new features** | Submission‑ready MVP + rehearsed pitch + backup video |
 | **Sept 10** | Demo day | — |
 

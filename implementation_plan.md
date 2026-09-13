@@ -22,14 +22,18 @@ SatQyery-AI/
 ├── environment.yml                 # Conda alternative
 ├── setup.py                        # Optional editable install
 │
-├── app/                            # ── Streamlit UI ──
+├── app/                            # ── FastAPI Mission Backend & Bridge ──
 │   ├── __init__.py
-│   ├── main.py                     # Streamlit entry point (streamlit run app/main.py)
-│   ├── ui_components.py            # Reusable Streamlit widgets (upload, overlay, trace panel)
-│   ├── session_state.py            # Session-state helpers
-│   └── assets/                     # Static assets for the UI
-│       ├── logo.png
-│       └── styles.css
+│   ├── api_server.py               # REST API & static SPA server
+│   ├── pipeline_bridge.py          # Adapter between API and ML pipelines
+│   ├── pdf_report.py               # PDF executive mission report synthesis
+│   └── assets/                     # Static assets
+│       └── logo.png
+│
+├── frontend/                       # ── Cinematic React 19 3D Mission Workstation ──
+│   ├── src/                        # React components, Three.js canvas, state
+│   ├── package.json                # React/Vite dependencies
+│   └── vite.config.ts              # Vite configuration
 │
 ├── satquery/                       # ── Core Python package ──
 │   ├── __init__.py
@@ -189,7 +193,7 @@ SatQyery-AI/
 
 | Decision | Rationale |
 |---|---|
-| `satquery/` as an installable package | Enables `from satquery.perception import spectral_indices` everywhere — no `sys.path` hacks. Streamlit, notebooks, eval scripts, and tests all import the same code. |
+| `satquery/` as an installable package | Enables `from satquery.perception import spectral_indices` everywhere — no `sys.path` hacks. API server, notebooks, eval scripts, and tests all import the same code. |
 | Perception ≠ Specialists ≠ Classifiers | Maps 1:1 to the PRD's "deterministic layer" vs "specialist models" vs "shared classifier" — judges can follow the architecture slide directly into the code. |
 | `pipeline/` owns execution + trace | The agentic controller (router → executor → trace) is its own module. The trace JSON schema is defined here, and tests assert against it — this is literally the "auditable execution summary" the PS requires. |
 | `models/` gitignored, `download_models.py` committed | No 7GB weight files in Git. One script fetches everything from HF Hub. Demo-day laptop runs it once; Colab/Kaggle notebooks call it in cell 1. |
@@ -221,14 +225,15 @@ SatQyery-AI/
 I'll scaffold every directory, every `__init__.py`, every stub file with proper docstrings and TODO markers — so on Day 1 your team can:
 
 1. `pip install -e .` and have the `satquery` package importable
-2. `streamlit run app/main.py` and see a working (empty) upload UI
-3. `pytest tests/` and see all tests discovered (passing as stubs)
-4. Split work: one person takes `satquery/perception/`, another takes `satquery/specialists/`, another takes `app/` — zero merge conflicts
+2. Launch FastAPI backend and React frontend workstation
+3. `pytest tests/` and see all tests pass
+4. Split work: one person takes `satquery/perception/`, another takes `satquery/specialists/`, another takes `frontend/` — zero merge conflicts
 
-### Files to create (~80 files):
+### Files created:
 
 - **Root config**: `.gitignore`, `.env.example`, `requirements.txt`, `environment.yml`, `setup.py`, `LICENSE`, `PRD.md`, `README.md`
-- **App layer** (4 files): `app/main.py`, `app/ui_components.py`, `app/session_state.py`, `app/assets/styles.css`
+- **Backend & Bridge**: `app/api_server.py`, `app/pipeline_bridge.py`, `app/pdf_report.py`, `app/assets/logo.png`
+- **Frontend layer**: `frontend/` (React 19, TypeScript, Tailwind, Three.js WebGL)
 - **Core package** (25+ files): All modules under `satquery/`
 - **Model placeholders** (6 dirs + download script)
 - **Data scripts** (4 scripts + demo metadata)
@@ -244,10 +249,10 @@ I'll scaffold every directory, every `__init__.py`, every stub file with proper 
 ### Automated Tests
 ```bash
 # After scaffolding, verify:
-pip install -e .               # Package installs without error
-python -c "import satquery"    # Package imports
-streamlit run app/main.py      # UI launches (manual check)
-pytest tests/ -v               # All test stubs discovered
+pip install -e .                         # Package installs without error
+python -c "import satquery"              # Package imports
+uvicorn app.api_server:app --reload      # Backend API launches
+pytest tests/ -v                         # All tests pass
 ```
 
 ### Manual Verification

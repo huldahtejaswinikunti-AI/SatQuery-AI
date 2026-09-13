@@ -6,8 +6,11 @@ import pytest
 
 from satquery.lunar.lunar_validator import validate_lunar_input
 from satquery.lunar.lunar_pipeline import run_lunar_pipeline
-from app.pipeline_bridge import run_lunar_pipeline as bridge_run_lunar, run_batch_pipeline
-from app.ui_components import _BADGE_CONFIG
+from app.pipeline_bridge import (
+    run_lunar_pipeline as bridge_run_lunar,
+    run_batch_pipeline,
+    _BADGE_CONFIG,
+)
 
 
 def test_lunar_validator_valid():

@@ -1,11 +1,11 @@
 # ==============================================================================
 # SatQuery AI -- Quick Cloudflare Tunnel for Live Demonstrations (PowerShell)
-# Provides a temporary public HTTPS URL for the Streamlit UI during judging.
+# Provides a temporary public HTTPS URL for the React Mission Workstation during judging.
 # No Cloudflare account required.
 # ==============================================================================
 
 param(
-    [int]$Port = 8501
+    [int]$Port = 5173
 )
 
 Write-Host "============================================================" -ForegroundColor Cyan

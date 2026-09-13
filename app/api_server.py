@@ -22,6 +22,7 @@ if str(_ROOT) not in sys.path:
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from PIL import Image
 import numpy as np
@@ -435,6 +436,26 @@ def process_batch(req: BatchRequest) -> list[dict[str, Any]]:
         })
 
     return sanitized
+
+
+# ---- Static Frontend SPA Serving (when frontend/dist is built) -----------
+
+FRONTEND_DIST = _ROOT / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    if (FRONTEND_DIST / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        target = FRONTEND_DIST / full_path
+        if full_path and target.is_file():
+            return FileResponse(target)
+        index_file = FRONTEND_DIST / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Frontend build index.html not found")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # SatQuery AI -- Quick Cloudflare Tunnel for Live Demonstrations
-# Provides a temporary public HTTPS URL for the Streamlit UI during judging.
+# Provides a temporary public HTTPS URL for the React Mission Workstation during judging.
 # No Cloudflare account required.
 # ==============================================================================
 
 set -euo pipefail
 
-PORT="${1:-8501}"
+PORT="${1:-5173}"
 
 echo "============================================================"
 echo " Starting Cloudflare Quick Tunnel for SatQuery AI on port ${PORT}"

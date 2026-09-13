@@ -183,7 +183,7 @@ SatQuery AI is trained, calibrated, and evaluated against established remote sen
 |---|---|---|
 | **Zero Cloud Cost & Air-Gapped Readiness** | Designed to run completely offline on a single workstation laptop without external internet or third-party paid API keys. | Completely compliant with ISRO, Indian Armed Forces, and Department of Space air-gapped security protocols. |
 | **Efficient Model Footprint** | GeoChat-7B runs under 4-bit quantization requiring $<6\text{GB}$ VRAM; TinyCD, CLIPSeg, and ResNet-18 run in $<2\text{GB}$ RAM or on commodity CPUs. | Feasible on field laptops, mobile workstations, and ground stations without requiring multi-GPU server clusters. |
-| **Modular Microservices Architecture** | Frontend (React/Vite) communicates over clean REST contracts to the FastAPI server (`app/api_server.py`), with legacy Streamlit UI preserved. | Pluggable architecture allows seamless drop-in of future ISRO proprietary models (e.g. RISAT-1A or Cartosat-3 foundation models). |
+| **Modular Microservices Architecture** | Standalone Cinematic 3D Frontend (React 19/Vite/Three.js) communicates over clean REST contracts to the high-performance FastAPI server (`app/api_server.py`). | Pluggable architecture allows seamless drop-in of future ISRO proprietary models (e.g. RISAT-1A or Cartosat-3 foundation models). |
 | **Sub-Second Deterministic Fallback** | If GPU acceleration is unavailable, classical deterministic spectral and SAR engines execute in $<50\text{ms}$ on standard x86/ARM CPUs. | High mission availability: the system never crashes or goes completely dark during a field emergency. |
 
 ---
@@ -258,13 +258,7 @@ npm run dev
 ```
 *Access the Mission Workstation in your browser at `http://localhost:5173`.*
 
-### 4. Running the Legacy Streamlit Interface (Alternative)
-```powershell
-# From the repository root
-streamlit run app/main.py
-```
-
-### 5. Running the Test Suite
+### 4. Running the Test Suite
 ```powershell
 # Execute the comprehensive test suite (all 145 unit and integration tests)
 python -m pytest -q

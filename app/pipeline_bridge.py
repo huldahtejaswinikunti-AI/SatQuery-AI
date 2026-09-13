@@ -1,7 +1,7 @@
-"""Pipeline bridge -- single adapter between the Streamlit UI and the backend.
+"""Pipeline bridge -- core adapter between API clients/frontend and the ML backend.
 
 Calls validate_input() -> route() -> execute() and normalises the output
-into the contract shape that Person 5's UI expects::
+into the contract shape that the API server and UI expect::
 
     {
         "answer":   str,
@@ -17,8 +17,8 @@ into the contract shape that Person 5's UI expects::
         "validation_failure_reason": str | None,
     }
 
-This is the ONLY file that imports from satquery.pipeline / satquery.router /
-satquery.validator.  The rest of app/ imports only from here.
+This is the central bridge that imports from satquery.pipeline / satquery.router /
+satquery.validator and normalizes outputs for the FastAPI server.
 """
 
 from __future__ import annotations
@@ -31,6 +31,48 @@ logger = logging.getLogger(__name__)
 
 # Timeout for the full pipeline execution (seconds)
 PIPELINE_TIMEOUT_SECONDS = 120
+
+# ---------------------------------------------------------------------------
+# Confidence badge configuration (used for reporting and validation)
+# ---------------------------------------------------------------------------
+
+_BADGE_CONFIG = {
+    "high_cross_verified": {
+        "cls": "badge-high-verified",
+        "icon": "✓",
+        "label": "High Confidence (Cross-Verified)",
+    },
+    "high_sar_penetration": {
+        "cls": "badge-high-verified",
+        "icon": "✓",
+        "label": "High Confidence (SAR-Penetrated)",
+    },
+    "high_rule_based": {
+        "cls": "badge-high-rule",
+        "icon": "⚡",
+        "label": "Deterministic Signal",
+    },
+    "lower_confidence_disagreement": {
+        "cls": "badge-disagreement",
+        "icon": "!",
+        "label": "Lower Confidence (Signal Disagreement)",
+    },
+    "lower_confidence": {
+        "cls": "badge-disagreement",
+        "icon": "!",
+        "label": "Lower Confidence",
+    },
+    "moderate": {
+        "cls": "badge-unverified",
+        "icon": "~",
+        "label": "Moderate Confidence (Unverified)",
+    },
+    "experimental_unverified": {
+        "cls": "badge-experimental-unverified",
+        "icon": "⊘",
+        "label": "Experimental — No Cross-Check Available",
+    },
+}
 
 
 def run_pipeline(

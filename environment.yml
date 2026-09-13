@@ -11,5 +11,7 @@ dependencies:
   - tifffile>=2023.4.12
   - pip:
       - pydantic>=2.0.0
-      - streamlit>=1.28.0
+      - fastapi>=0.115.0
+      - uvicorn>=0.30.0
+      - python-multipart>=0.0.9
       - pytest>=7.4.0

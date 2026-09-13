@@ -268,7 +268,7 @@ def _load_standard_image(filepath: Path) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Convenience wrapper for Streamlit uploads
+# Convenience wrapper for file and upload streams
 # ---------------------------------------------------------------------------
 
 
@@ -278,13 +278,13 @@ def load_image_as_array(
     """Load an image and return a stacked array plus metadata.
 
     This is a convenience wrapper around ``load_image()`` that also
-    handles in-memory file objects (e.g. Streamlit ``UploadedFile``).
+    handles in-memory file objects (e.g. FastAPI ``UploadFile`` or file-like streams).
 
     Parameters
     ----------
     file_or_path : str | Path | file-like
         A filesystem path (str/Path) or an in-memory file object with
-        ``.name`` and ``.read()`` attributes (e.g. ``st.UploadedFile``).
+        ``.name`` and ``.read()`` attributes (e.g. FastAPI ``UploadFile.file``).
 
     Returns
     -------
@@ -304,7 +304,7 @@ def load_image_as_array(
         meta["path"] = str(file_or_path)
         return arr, meta
 
-    # Otherwise treat as file-like (Streamlit UploadedFile)
+    # Otherwise treat as file-like (FastAPI UploadFile / SpooledTemporaryFile)
     name = getattr(file_or_path, "name", "upload.png")
     suffix = _Path(name).suffix or ".png"
 

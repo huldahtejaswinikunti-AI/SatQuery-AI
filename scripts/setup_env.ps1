@@ -27,7 +27,7 @@ if (Test-Path ".venv\Scripts\Activate.ps1") {
 Write-Host "[3/5] Installing dependencies from requirements.txt..." -ForegroundColor Yellow
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest fpdf2 rasterio streamlit
+pip install pytest fpdf2 rasterio
 
 # 3. Install satquery package in editable mode
 Write-Host "[4/5] Installing satquery in editable mode (-e .)..." -ForegroundColor Yellow
@@ -45,7 +45,8 @@ $smoke = python scripts\smoke_test.py
 if ($LASTEXITCODE -eq 0) {
     Write-Host "============================================================" -ForegroundColor Green
     Write-Host " SatQuery AI environment setup SUCCESSFUL!" -ForegroundColor Green
-    Write-Host " Launch UI with:  streamlit run app\main.py" -ForegroundColor Green
+    Write-Host " Launch FastAPI backend:  uvicorn app.api_server:app --reload" -ForegroundColor Green
+    Write-Host " Launch React frontend:   cd frontend; npm run dev" -ForegroundColor Green
     Write-Host "============================================================" -ForegroundColor Green
 } else {
     Write-Host "============================================================" -ForegroundColor Red

@@ -33,7 +33,7 @@ source .venv/bin/activate
 echo -e "${YELLOW}[3/5] Installing dependencies from requirements.txt...${NC}"
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest fpdf2 rasterio streamlit
+pip install pytest fpdf2 rasterio
 
 # 3. Install satquery package in editable mode
 echo -e "${YELLOW}[4/5] Installing satquery in editable mode (-e .)...${NC}"
@@ -49,7 +49,8 @@ echo -e "${YELLOW}Running verification smoke tests...${NC}"
 if python scripts/smoke_test.py; then
     echo -e "${GREEN}============================================================${NC}"
     echo -e "${GREEN} SatQuery AI environment setup SUCCESSFUL!${NC}"
-    echo -e "${GREEN} Launch UI with:  streamlit run app/main.py${NC}"
+    echo -e "${GREEN} Launch FastAPI backend:  uvicorn app.api_server:app --reload${NC}"
+    echo -e "${GREEN} Launch React frontend:   cd frontend && npm run dev${NC}"
     echo -e "${GREEN}============================================================${NC}"
 else
     echo -e "${RED}============================================================${NC}"

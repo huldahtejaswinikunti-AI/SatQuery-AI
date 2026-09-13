@@ -9,7 +9,7 @@ Replaces synthetic benchmarks with 100% genuine Earth observation data:
 
 Outputs:
 - Authoritative georeferenced GeoTIFFs (.tif) preserving CRS, transform, and band structure.
-- Calibrated 8-bit preview PNGs (.png) for Streamlit frontend display.
+- Calibrated 8-bit preview PNGs (.png) for Mission Workstation frontend display.
 - Full provenance metadata recorded in data/demo_samples/metadata.json.
 """
 
